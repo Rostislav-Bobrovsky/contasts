@@ -18,7 +18,7 @@
         <h1 class="text-center">${buttonForm}</h1>
     </header>
 
-    <form action="/contacts" method="post">
+    <form action="${pageContext.request.contextPath}/contacts" method="post">
         <div class="row">
             <div class="col-lg-4">
                 <div class="row">

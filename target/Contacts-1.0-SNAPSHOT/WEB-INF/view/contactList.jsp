@@ -45,13 +45,13 @@
             <a class="btn btn-success center-block" href="http://localhost:8080/contacts/add">Add</a>
         </div>
         <div class="col-lg-1">
-            <form action="/contacts/remove" method="post">
+            <form action="${pageContext.request.contextPath}/contacts/remove" method="post">
                 <input id="idsRemove" name="idsRemove" type="hidden">
                 <button type="submit" id="buttonRemove" onclick="setIdsChecked('Remove')" class="btn btn-danger center-block" disabled>Remove</button>
             </form>
         </div>
         <div class="col-lg-offset-8 col-lg-1">
-            <form action="/contacts/send" method="post">
+            <form action="${pageContext.request.contextPath}/contacts/send" method="post">
                 <input id="idsSend" name="idsSend" type="hidden">
                 <button type="submit" id="buttonSend" onclick="setIdsChecked('Send')" class="btn btn-primary center-block " disabled>Send</button>
             </form>
@@ -69,10 +69,6 @@
                     </a>
                 </li>
                 <li><a href="/contacts?limit=8&offset=6">1</a></li>
-                <li><a href="#">2</a></li>
-                <li><a href="#">3</a></li>
-                <li><a href="#">4</a></li>
-                <li><a href="#">5</a></li>
                 <li>
                     <a href="#" aria-label="Next">
                         <span aria-hidden="true">&raquo;</span>

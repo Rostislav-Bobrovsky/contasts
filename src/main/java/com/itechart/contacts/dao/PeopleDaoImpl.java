@@ -54,7 +54,7 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
             preparedStatement.executeUpdate();
 
             for (int i = 0; i < people.getPhones().size(); ++i) {
-                preparedStatement = connection.prepareStatement("INSERT INTO telephone(people_id, country_code, operator_code, phone_number, phone_type, comment) " +
+                preparedStatement = connection.prepareStatement("INSERT INTO phone(people_id, country_code, operator_code, phone_number, phone_type, comment) " +
                         "VALUE (?, ?, ?, ?, ?, ?)");
                 preparedStatement.setInt(1, idPeople);
                 preparedStatement.setString(2, people.getPhones().get(i).getCountryCode());
@@ -198,7 +198,7 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
         Connection connection = ConnectionFactory.openConnection();
         PreparedStatement preparedStatement = null;
         try {
-            preparedStatement = connection.prepareStatement("SELECT *  FROM telephone  WHERE people_id = ?");
+            preparedStatement = connection.prepareStatement("SELECT *  FROM phone  WHERE people_id = ?");
             preparedStatement.setLong(1, peopleId);
             ResultSet resultSet = preparedStatement.executeQuery();
 
@@ -245,7 +245,7 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
         Connection connection = ConnectionFactory.openConnection();
         PreparedStatement preparedStatement = null;
         try {
-            preparedStatement = connection.prepareStatement("SELECT id  FROM telephone  WHERE people_id = ?");
+            preparedStatement = connection.prepareStatement("SELECT id  FROM phone WHERE people_id = ?");
             preparedStatement.setLong(1, peopleId);
             ResultSet resultSet = preparedStatement.executeQuery();
 
@@ -283,7 +283,11 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
             preparedStatement.setString(1, people.getFirstName());
             preparedStatement.setString(2, people.getLastName());
             preparedStatement.setString(3, people.getSurName());
-            preparedStatement.setTimestamp(4, new Timestamp(people.getBirthday().getTime()));
+            if (people.getBirthday() == null) {
+                preparedStatement.setTimestamp(4, null);
+            } else {
+                preparedStatement.setTimestamp(4, new Timestamp(people.getBirthday().getTime()));
+            }
             preparedStatement.setString(5, Sex.convertToString(people.getSex()));
             preparedStatement.setString(6, people.getNationality());
             preparedStatement.setString(7, RelationshipStatus.convertToString(people.getRelationshipStatus()));
@@ -311,7 +315,7 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
 
             for (int i = 0; i < people.getPhones().size(); ++i) {
                 if (people.getPhones().get(i).getId().contains("new")) {
-                    preparedStatement = connection.prepareStatement("INSERT INTO telephone(people_id, country_code, operator_code, phone_number, phone_type, comment) " +
+                    preparedStatement = connection.prepareStatement("INSERT INTO phone(people_id, country_code, operator_code, phone_number, phone_type, comment) " +
                             "VALUE (?, ?, ?, ?, ?, ?)");
                     preparedStatement.setInt(1, people.getId());
                     preparedStatement.setString(2, people.getPhones().get(i).getCountryCode());
@@ -322,7 +326,7 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
 
                     preparedStatement.executeUpdate();
                 } else {
-                    preparedStatement = connection.prepareStatement("UPDATE telephone " +
+                    preparedStatement = connection.prepareStatement("UPDATE phone " +
                             "SET country_code = ?, operator_code = ?, phone_number = ?, phone_type = ?, comment = ? " +
                             "WHERE id = ?");
                     preparedStatement.setString(1, people.getPhones().get(i).getCountryCode());
@@ -340,7 +344,7 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
             }
 
             for (Integer idPhone : idsExistPhones) {
-                preparedStatement = connection.prepareStatement("DELETE FROM telephone WHERE id = ?");
+                preparedStatement = connection.prepareStatement("DELETE FROM phone WHERE id = ?");
                 preparedStatement.setLong(1, idPhone);
 
                 preparedStatement.executeUpdate();

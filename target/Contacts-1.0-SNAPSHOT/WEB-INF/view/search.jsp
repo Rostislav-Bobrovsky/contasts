@@ -14,7 +14,7 @@
     <header class="page-header">
         <h1 class="text-center">Search</h1>
     </header>
-    <form action="/contacts" method="post">
+    <form action="${pageContext.request.contextPath}/contacts" method="post">
         <div class="row">
             <div class="form-horizontal">
                 <div class="form-group">

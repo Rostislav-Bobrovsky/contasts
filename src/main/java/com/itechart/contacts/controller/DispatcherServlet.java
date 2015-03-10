@@ -43,7 +43,7 @@ public class DispatcherServlet extends HttpServlet {
 
         String requestURI = request.getRequestURI();
         RequestDispatcher dispatcher = null;
-        if (isEdit(requestURI)) {
+         if (isEdit(requestURI)) {
             requestURI = requestURI.replaceAll("/contacts/edit/", "");
             dispatcher = getServletContext().getRequestDispatcher("/WEB-INF/view/addEdit.jsp");
             People people = peopleDao.load(Long.parseLong(requestURI));
