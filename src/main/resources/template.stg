@@ -1,0 +1,7 @@
+Birthday(name) ::= <<
+Birthday!!! <name>
+>>
+
+Job(name) ::= <<
+Job!!! <name>
+>>
