@@ -3,6 +3,6 @@
 <html>
 <body>
 <h2>Hello World!</h2>
-<c:redirect url="contacts/"/>
+<c:redirect url="contacts/1"/>
 </body>
 </html>

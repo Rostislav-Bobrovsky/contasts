@@ -1,7 +1,15 @@
 Birthday(name) ::= <<
-Birthday!!! <name>
+Dear, <name>. On behalf of all our team, we would like to wish you a happy upcoming birthday. We dream for you a spectacular life and committed behavior towards your wishes and desires.
+
+Yours sincerely,
+:iTechArt
 >>
 
 Job(name) ::= <<
-Job!!! <name>
+Dear <name>,
+
+Thank you for your letter of application for the post of an IT specialist. We are glad to inform you ,that we were interested in your profile. We would like to invite you to the interview. The meeting will take place in our office. Please, bring your qualification certificates, if you have any, with you to the interview. Dress code is required. Please, contact us either by fax, e-mail or by phone if time of the interview doesn't suit you.
+
+Yours sincerely,
+Bobrovsky R.A.
 >>

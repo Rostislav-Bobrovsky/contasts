@@ -14,7 +14,7 @@
     <header class="page-header">
         <h1 class="text-center">Search</h1>
     </header>
-    <form action="${pageContext.request.contextPath}/contacts" method="post">
+    <form action="${pageContext.request.contextPath}/contacts" method="post" onsubmit="return checkSearchForm();">
         <div class="row">
             <div class="form-horizontal">
                 <div class="form-group">
@@ -93,9 +93,10 @@
                         <label for="relationshipStatus" class="col-lg-3 control-label">Relationship status</label>
 
                         <div class="col-lg-9">
-                            <select id="relationshipStatus" nmae="relationshipStatus" class="form-control">
-                                <c:forEach var="relationshipStatus" items="<%=RelationshipStatus.values()%>">
-                                    <option>${relationshipStatus.displayName}</option>
+                            <select id="relationshipStatus" name="relationshipStatus" class="form-control">
+                                <option>---</option>
+                                <c:forEach var="relationshipSt" items="<%=RelationshipStatus.values()%>">
+                                    <option>${relationshipSt.displayName}</option>
                                 </c:forEach>
                             </select>
                         </div>
@@ -116,7 +117,7 @@
                         <label for="inputEmail" class="col-lg-3 control-label">Email</label>
 
                         <div class="col-lg-9">
-                            <input type="email" class="form-control" id="inputEmail" name="inputEmail"
+                            <input type="text" class="form-control" id="inputEmail" name="inputEmail"
                                    placeholder="Email">
                         </div>
                     </div>
@@ -175,10 +176,10 @@
 
         <div class="row">
             <div class="col-lg-6">
-                <a class="btn btn-default btn-lg pull-right" href="http://localhost:8080/contacts">Cancel</a>
+                <a class="btn btn-default btn-lg pull-right" href="${pageContext.request.contextPath}/contacts/1">Cancel</a>
             </div>
             <div class="col-lg-6">
-                <button type="submit" class="btn btn-info btn-lg pull-left" onclick="checkSearchForm();">Search</button>
+                <button type="submit" class="btn btn-info btn-lg pull-left">Search</button>
             </div>
         </div>
     </form>

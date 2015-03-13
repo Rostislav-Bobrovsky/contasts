@@ -1,5 +1,6 @@
 package com.itechart.contacts.model;
 
+import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
 
@@ -20,6 +21,7 @@ public class People {
     private String job;
     private Address address;
     private List<Phone> phones;
+    private InputStream photo;
 
     public People() {
     }
@@ -126,5 +128,13 @@ public class People {
 
     public void setPhones(List<Phone> phones) {
         this.phones = phones;
+    }
+
+    public InputStream getPhoto() {
+        return photo;
+    }
+
+    public void setPhoto(InputStream photo) {
+        this.photo = photo;
     }
 }

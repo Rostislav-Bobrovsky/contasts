@@ -8,6 +8,11 @@ function setIdsChecked(input) {
     }
     idsChecked = idsChecked.substring(0, idsChecked.length - 1);
     document.getElementById('ids' + input).value = idsChecked;
+    document.getElementById('selectAll').checked = false;
+}
+
+function chooseImage() {
+    document.getElementById('inputPhoto').click();
 }
 
 function buttonDisabled() {
@@ -129,19 +134,25 @@ function savePhoneFormPhone() {
 function checkEmptyFormAddEdit(addOrEdit) {
     if (!((document.getElementById('firstName').value).trim()) || !((document.getElementById('lastName').value).trim()) || !((document.getElementById('inputEmail').value).trim()) || !((document.getElementById('inputCountry').value).trim())) {
         alert("Fill \nFirst Name \nLast Name \nInput Email \nInput Country");
+        return false;
     }
 
     var inputDate = (document.getElementById('inputDate').value).trim();
 
-    var inputDateSplit = inputDate.split("-");
-    if (inputDateSplit.length != 3) {
-        alert("Invalid Date input");
-    }
-    var date;
-    if ((date = new Date(inputDateSplit[0] + '-' + inputDateSplit[1] + '-' + inputDateSplit[2])) == 'Invalid Date') {
-        alert('Invalid Date not correct')
-    } else if (inputDateSplit[2] != date.getDate()) {
-        alert('not exist');
+    if (inputDate) {
+        var inputDateSplit = inputDate.split("-");
+        if (inputDateSplit.length != 3) {
+            alert("Invalid Date input");
+            return false;
+        }
+        var date;
+        if ((date = new Date(inputDateSplit[0] + '-' + inputDateSplit[1] + '-' + inputDateSplit[2])) == 'Invalid Date') {
+            alert('Invalid Date not correct');
+            return false;
+        } else if (inputDateSplit[2] != date.getDate()) {
+            alert('not exist');
+            return false;
+        }
     }
 
     document.getElementById('addOrEdit').value = addOrEdit;
@@ -151,8 +162,12 @@ function checkEmptyFormAddEdit(addOrEdit) {
     for (var i = 0; i < phoneCheckboxes.length; ++i) {
         idsAllPhones += phoneCheckboxes[i].value + '/';
     }
+    if (document.getElementById('inputPhoto').value) {
+        document.getElementById('isUploadImage').value = true;
+    }
     document.getElementById('tablePhones').innerHTML += "<input id=\"idsAllPhones\"\
     name=\"idsAllPhones\" type=\"hidden\" value=\"" + idsAllPhones + "\">";
+    return true;
 }
 
 function showFormPhoneAdd() {
@@ -199,6 +214,7 @@ function removePhones() {
         var line = document.getElementById("line-" + id);
         line.parentNode.removeChild(line);
     }
+    document.getElementById('selectAllPhones').checked = false;
 }
 
 function hideFormPhone() {
@@ -214,10 +230,10 @@ function hideFormAttachment() {
     document.getElementById('popup-attachment').style.display = "none";
 }
 
-function checkValidDate(inputDateId) {
-    var inputDate = (document.getElementById(inputDateId).value).trim();
+function checkValidDate(inputDate) {
+    var verifiableDate = (document.getElementById(inputDate).value).trim();
 
-    var inputDateSplit = inputDate.split("-");
+    var inputDateSplit = verifiableDate.split("-");
     if (inputDateSplit.length != 3) {
         return false;
     }
@@ -225,8 +241,9 @@ function checkValidDate(inputDateId) {
     if ((date = new Date(inputDateSplit[0] + '-' + inputDateSplit[1] + '-' + inputDateSplit[2])) == 'Invalid Date') {
         return false;
     } else if (inputDateSplit[2] != date.getDate()) {
-        return true;
+        return false;
     }
+    return true;
 }
 
 
@@ -234,31 +251,55 @@ function checkSearchForm() {
     if ((document.getElementById('inputDateFrom')).value.trim()) {
         if (!checkValidDate('inputDateFrom')) {
             alert('inputDateFrom ---');
+            return false;
         }
     }
     if ((document.getElementById('inputDateTo')).value.trim()) {
         if (!checkValidDate('inputDateTo')) {
             alert('inputDateTo ---');
+            return false;
+
         }
     }
-    if (!((document.getElementById('inputFirstName')).value.trim()) || !((document.getElementById('inputLastName')).value.trim()) || !((document.getElementById('inputSurName')).value.trim()) || !((document.getElementById('inputDateFrom')).value.trim()) || !((document.getElementById('inputDateTo')).value.trim()) || !((document.getElementById('inputNationality')).value.trim()) || !((document.getElementById('inputWebSite')).value.trim()) || !((document.getElementById('inputEmail')).value.trim()) || !((document.getElementById('inputJob')).value.trim()) || !((document.getElementById('inputCountry')).value.trim()) || !((document.getElementById('inputCity')).value.trim()) || !((document.getElementById('inputStreet')).value.trim()) || !((document.getElementById('inputHouse')).value.trim()) || !((document.getElementById('inputApartment')).value.trim()) || !((document.getElementById('inputIndex')).value.trim())) {
+    if (!((document.getElementById('inputFirstName')).value.trim()) &&
+        !((document.getElementById('inputLastName')).value.trim()) &&
+        !((document.getElementById('inputSurName')).value.trim()) &&
+        !((document.getElementById('inputDateFrom')).value.trim()) &&
+        !((document.getElementById('inputDateTo')).value.trim()) &&
+        '-None selected-' == (document.getElementById('inputSex')).value &&
+        !((document.getElementById('inputNationality')).value.trim()) &&
+        '---' == (document.getElementById('relationshipStatus')).value &&
+        !((document.getElementById('inputWebSite')).value.trim()) &&
+        !((document.getElementById('inputEmail')).value.trim()) &&
+        !((document.getElementById('inputJob')).value.trim()) &&
+        !((document.getElementById('inputCountry')).value.trim()) &&
+        !((document.getElementById('inputCity')).value.trim()) &&
+        !((document.getElementById('inputStreet')).value.trim()) &&
+        !((document.getElementById('inputHouse')).value.trim()) &&
+        !((document.getElementById('inputApartment')).value.trim()) &&
+        !((document.getElementById('inputIndex')).value.trim())) {
         alert('Form is empty');
+        return false;
     }
+    return true;
 }
 
 function checkSendForm() {
-    if (!((document.getElementById('textareaText').innerHTML).trim())) {
+    if (!((document.getElementById('textareaText').value).trim())) {
         alert('Enter Compose Email');
+        return false;
     }
+    document.getElementById('to').disabled = false;
+    return true;
 }
 
 
 function changeTemplate() {
     if ('-None selected-' == document.getElementById('templateSelect').value) {
         document.getElementById('textareaText').disabled = false;
-        document.getElementById('textareaText').innerHTML = "";
+        document.getElementById('textareaText').value = "";
     } else {
+        document.getElementById('textareaText').value = document.getElementById('id' + document.getElementById('templateSelect').value).value;
         document.getElementById('textareaText').disabled = true;
-        document.getElementById('textareaText').innerHTML = document.getElementById('id' + document.getElementById('templateSelect').value).value;
     }
 }

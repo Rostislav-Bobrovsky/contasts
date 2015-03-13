@@ -4,51 +4,173 @@ import com.itechart.contacts.dao.PeopleDao;
 import com.itechart.contacts.dao.SearchDao;
 import com.itechart.contacts.factory.PeopleDaoFactory;
 import com.itechart.contacts.factory.SearchDaoFactory;
+import com.itechart.contacts.mail.Mail;
 import com.itechart.contacts.model.*;
-import org.apache.commons.lang3.StringUtils;
+import com.sun.org.apache.xml.internal.security.utils.Base64;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.apache.commons.lang3.StringUtils.*;
+
 @SuppressWarnings("serial")
+@MultipartConfig(maxFileSize = 16177215)
 public class DispatcherServlet extends HttpServlet {
+    private final static int LIMIT_DEFAULT = 10;
+    public static final int OFFSET_DEFAULT = 0;
+    private final static Logger logger = LogManager.getLogger(DispatcherServlet.class);
 
     private PeopleDao peopleDao = PeopleDaoFactory.getInstance();
     private SearchDao searchDao = SearchDaoFactory.getInstance();
 
-    public static boolean isEdit(String requestURI) {
+    @Override
+    public void init() throws ServletException {
+        super.init();
+        MailingJobStarter.scheduleMailingJob();
+    }
+
+    private static boolean isEdit(String requestURI) {
         Pattern p = Pattern.compile("^/contacts/edit/[0-9]+$");
         Matcher m = p.matcher(requestURI);
         return m.matches();
     }
 
+    private static boolean isContacts(String requestURI) {
+        Pattern p = Pattern.compile("^/contacts/[0-9]+$");
+        Matcher m = p.matcher(requestURI);
+        return m.matches();
+    }
+
+    private void setAttributes(HttpServletRequest request, List<People> peoples, int limit, int offset) {
+        int offsetLift;
+        int offsetRight;
+        if (offset == 0) {
+            offsetLift = 0;
+        } else {
+            offsetLift = offset - 1;
+        }
+        if ((offset + 1) * limit < peopleDao.getCountElements()) {
+            offsetRight = offset + 1;
+        } else {
+            offsetRight = offset;
+        }
+
+        request.setAttribute("offset", offset);
+        request.setAttribute("offsetLeft", offsetLift);
+        request.setAttribute("offsetRight", offsetRight);
+        request.setAttribute("limit", limit);
+        request.setAttribute("tablePage", offset + 1);
+        request.setAttribute("peoples", peoples);
+    }
+
+    private SearchDto getSearchDto(HttpServletRequest request) {
+        SearchDto searchDto = new SearchDto();
+
+        if (isNotBlank(request.getParameter("inputFirstName"))) {
+            searchDto.setFirstName(trim(request.getParameter("inputFirstName")));
+        }
+        if (isNotBlank(request.getParameter("inputLastName"))) {
+            searchDto.setLastName(trim(request.getParameter("inputLastName")));
+        }
+        if (isNotBlank(request.getParameter("inputSurName"))) {
+            searchDto.setSurName(trim(request.getParameter("inputSurName")));
+        }
+        if (isNotBlank(request.getParameter("inputDateFrom"))) {
+            try {
+                Date date = DateUtils.parseDate(request.getParameter("inputDateFrom"), "yyyy-MM-dd");
+                searchDto.setDateFrom(date);
+            } catch (ParseException e) {
+                logger.error(Level.INFO, e);
+            }
+        }
+        if (isNotBlank(request.getParameter("inputDateTo"))) {
+            try {
+                Date date = DateUtils.parseDate(request.getParameter("inputDateTo"), "yyyy-MM-dd");
+                searchDto.setDateTo(date);
+            } catch (ParseException e) {
+                logger.error(Level.INFO, e);
+            }
+        }
+        searchDto.setSex(Sex.convertToSex(request.getParameter("inputSex")));
+        if (isNotBlank(request.getParameter("inputNationality"))) {
+            searchDto.setNationality(trim(request.getParameter("inputNationality")));
+        }
+        searchDto.setRelationshipStatus(RelationshipStatus.convertToRelationshipStatus(request.getParameter("relationshipStatus")));
+        if (isNotBlank(request.getParameter("inputWebSite"))) {
+            searchDto.setWebSite(trim(request.getParameter("inputWebSite")));
+        }
+        if (isNotBlank(request.getParameter("inputEmail"))) {
+            searchDto.setEmail(trim(request.getParameter("inputEmail")));
+        }
+        if (isNotBlank(request.getParameter("inputJob"))) {
+            searchDto.setJob(trim(request.getParameter("inputJob")));
+        }
+        return searchDto;
+    }
+
     public void doGet(HttpServletRequest request, HttpServletResponse response)
             throws IOException, ServletException {
-        doPost(request, response);
+//        request.setCharacterEncoding("UTF-8");
+
+        String requestURI = request.getRequestURI();
+
+        if (isContacts(requestURI)) {
+            RequestDispatcher dispatcher = getServletContext().getRequestDispatcher("/WEB-INF/view/contactList.jsp");
+            List<People> peoples;
+            int limit, offset;
+            if (isEmpty(request.getParameter("limit"))) {
+                limit = LIMIT_DEFAULT;
+                offset = OFFSET_DEFAULT;
+                peoples = peopleDao.getAll(limit, offset);
+            } else {
+                peoples = peopleDao.getAll(Integer.parseInt(request.getParameter("limit")),
+                        Integer.parseInt(request.getParameter("offset")));
+
+                offset = Integer.parseInt(request.getParameter("offset"));
+                limit = Integer.parseInt(request.getParameter("limit"));
+            }
+
+            setAttributes(request, peoples, limit, offset);
+            dispatcher.forward(request, response);
+        } else {
+            doPost(request, response);
+        }
     }
 
     public void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException, ServletException {
+//        request.setCharacterEncoding("UTF-8");
 
         String requestURI = request.getRequestURI();
         RequestDispatcher dispatcher = null;
-         if (isEdit(requestURI)) {
+
+        if (isEdit(requestURI)) {
             requestURI = requestURI.replaceAll("/contacts/edit/", "");
             dispatcher = getServletContext().getRequestDispatcher("/WEB-INF/view/addEdit.jsp");
             People people = peopleDao.load(Long.parseLong(requestURI));
             request.setAttribute("people", people);
             request.setAttribute("buttonForm", "Edit");
+
+            if (people.getPhoto() != null) {
+                byte[] imageBytes = new byte[people.getPhoto().available()];
+                people.getPhoto().read(imageBytes);
+                String urlImage = "data:image/jpg;base64," + Base64.encode(imageBytes);
+                request.setAttribute("uploadImage", urlImage);
+            }
         } else {
             switch (requestURI) {
                 case "/contacts/add":
@@ -62,13 +184,9 @@ public class DispatcherServlet extends HttpServlet {
                     dispatcher = getServletContext().getRequestDispatcher("/WEB-INF/view/send.jsp");
                     String idsSend = request.getParameter("idsSend");
                     String[] idsSendSplit = idsSend.split(",");
-//                    List<String> emails = searchDao.getSelectEmails(idsSendSplit);
+                    List<String> emails = searchDao.getSelectEmails(idsSendSplit);
 
-                    List<String> emails = new ArrayList<>();
-                    emails.add("rostik.life@yandex.by");
-                    emails.add("rostik.life@yandex.ru");
-
-                    request.setAttribute("emails", StringUtils.join(emails, ", "));
+                    request.setAttribute("emails", join(emails, ", "));
                     break;
                 case "/contacts/remove":
                     String idsRemove = request.getParameter("idsRemove");
@@ -78,260 +196,37 @@ public class DispatcherServlet extends HttpServlet {
                     }
                 default:
                     if ("Add".equals(request.getParameter("addOrEdit"))) {
-                        People people = new People();
-
-                        if (StringUtils.isNotBlank(request.getParameter("firstName"))) {
-                            people.setFirstName(StringUtils.trim(request.getParameter("firstName")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("lastName"))) {
-                            people.setLastName(StringUtils.trim(request.getParameter("lastName")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("surName"))) {
-                            people.setSurName(StringUtils.trim(request.getParameter("surName")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputDate"))) {
-                            try {
-                                Date date = DateUtils.parseDate(StringUtils.trim(request.getParameter("inputDate")), "yyyy-MM-dd");
-                                people.setBirthday(date);
-                            } catch (ParseException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputSex"))) {
-                            people.setSex(Sex.convertToSex(request.getParameter("inputSex")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputNationality"))) {
-                            people.setNationality(StringUtils.trim(request.getParameter("inputNationality")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("relationshipStatus"))) {
-                            people.setRelationshipStatus(RelationshipStatus.convertToRelationshipStatus(request.getParameter("relationshipStatus")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputWebSite"))) {
-                            people.setWebSite(StringUtils.trim(request.getParameter("inputWebSite")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputEmail"))) {
-                            people.setEmail(StringUtils.trim(request.getParameter("inputEmail")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputJob"))) {
-                            people.setJob(StringUtils.trim(request.getParameter("inputJob")));
-                        }
-
-                        List<Phone> phones = new ArrayList<>();
-                        if (StringUtils.isNotBlank(request.getParameter("idsAllPhones"))) {
-                            String idsPhone[] = (request.getParameter("idsAllPhones")).split("/");
-                            for (String anIdsPhone : idsPhone) {
-                                Phone phone = new Phone();
-                                if (StringUtils.isNotBlank(request.getParameter("inputCountryCode-" + anIdsPhone))) {
-                                    phone.setCountryCode(StringUtils.trim(request.getParameter("inputCountryCode-" + anIdsPhone)));
-                                }
-                                if (StringUtils.isNotBlank(request.getParameter("inputOperatorCode-" + anIdsPhone))) {
-                                    phone.setOperatorCode(StringUtils.trim(request.getParameter("inputOperatorCode-" + anIdsPhone)));
-                                }
-                                if (StringUtils.isNotBlank(request.getParameter("inputPhoneNumber-" + anIdsPhone))) {
-                                    phone.setPhoneNumber(StringUtils.trim(request.getParameter("inputPhoneNumber-" + anIdsPhone)));
-                                }
-                                if (StringUtils.isNotBlank(request.getParameter("inputPhoneType-" + anIdsPhone))) {
-                                    phone.setPhoneType(PhoneType.convertToPhoneType(request.getParameter("inputPhoneType-" + anIdsPhone)));
-                                }
-                                if (StringUtils.isNotBlank(request.getParameter("inputPhoneComment-" + anIdsPhone))) {
-                                    phone.setComment(StringUtils.trim(request.getParameter("inputPhoneComment-" + anIdsPhone)));
-                                }
-                                phones.add(phone);
-                            }
-                        }
-                        people.setPhones(phones);
-
-                        Address address = new Address();
-                        if (StringUtils.isNotBlank(request.getParameter("inputCountry"))) {
-                            address.setCountry(StringUtils.trim(request.getParameter("inputCountry")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputCity"))) {
-                            address.setCity(StringUtils.trim(request.getParameter("inputCity")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputStreet"))) {
-                            address.setStreet(StringUtils.trim(request.getParameter("inputStreet")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputHouse"))) {
-                            address.setHouse(StringUtils.trim(request.getParameter("inputHouse")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputApartment"))) {
-                            address.setApartment(StringUtils.trim(request.getParameter("inputApartment")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputIndex"))) {
-                            address.setIndex(StringUtils.trim(request.getParameter("inputIndex")));
-                        }
-                        people.setAddress(address);
+                        People people = DispatcherServletHandler.getPeopleFromAddEdit(request);
 
                         peopleDao.create(people);
-
                     } else if ("Edit".equals(request.getParameter("addOrEdit"))) {
-                        People people = new People();
-
-                        people.setId(Integer.parseInt(request.getParameter("idPeople")));
-                        if (StringUtils.isNotBlank(request.getParameter("firstName"))) {
-                            people.setFirstName(StringUtils.trim(request.getParameter("firstName")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("lastName"))) {
-                            people.setLastName(StringUtils.trim(request.getParameter("lastName")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("surName"))) {
-                            people.setSurName(StringUtils.trim(request.getParameter("surName")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputDate"))) {
-                            try {
-                                Date date = DateUtils.parseDate(StringUtils.trim(request.getParameter("inputDate")), "yyyy-MM-dd");
-                                people.setBirthday(date);
-                            } catch (ParseException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputSex"))) {
-                            people.setSex(Sex.convertToSex(request.getParameter("inputSex")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputNationality"))) {
-                            people.setNationality(StringUtils.trim(request.getParameter("inputNationality")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("relationshipStatus"))) {
-                            people.setRelationshipStatus(RelationshipStatus.convertToRelationshipStatus(request.getParameter("relationshipStatus")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputWebSite"))) {
-                            people.setWebSite(StringUtils.trim(request.getParameter("inputWebSite")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputEmail"))) {
-                            people.setEmail(StringUtils.trim(request.getParameter("inputEmail")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputJob"))) {
-                            people.setJob(StringUtils.trim(request.getParameter("inputJob")));
-                        }
-
-                        List<Phone> phones = new ArrayList<>();
-                        if (StringUtils.isNotBlank(request.getParameter("idsAllPhones"))) {
-                            String idsPhone[] = (request.getParameter("idsAllPhones")).split("/");
-                            for (String anIdsPhone : idsPhone) {
-                                Phone phone = new Phone();
-                                phone.setId(anIdsPhone);
-                                if (StringUtils.isNotBlank(request.getParameter("inputCountryCode-" + anIdsPhone))) {
-                                    phone.setCountryCode(StringUtils.trim(request.getParameter("inputCountryCode-" + anIdsPhone)));
-                                }
-                                if (StringUtils.isNotBlank(request.getParameter("inputOperatorCode-" + anIdsPhone))) {
-                                    phone.setOperatorCode(StringUtils.trim(request.getParameter("inputOperatorCode-" + anIdsPhone)));
-                                }
-                                if (StringUtils.isNotBlank(request.getParameter("inputPhoneNumber-" + anIdsPhone))) {
-                                    phone.setPhoneNumber(StringUtils.trim(request.getParameter("inputPhoneNumber-" + anIdsPhone)));
-                                }
-                                if (StringUtils.isNotBlank(request.getParameter("inputPhoneType-" + anIdsPhone))) {
-                                    phone.setPhoneType(PhoneType.convertToPhoneType(request.getParameter("inputPhoneType-" + anIdsPhone)));
-                                }
-                                if (StringUtils.isNotBlank(request.getParameter("inputPhoneComment-" + anIdsPhone))) {
-                                    phone.setComment(StringUtils.trim(request.getParameter("inputPhoneComment-" + anIdsPhone)));
-                                }
-                                phones.add(phone);
-                            }
-                        }
-                        people.setPhones(phones);
-
-                        Address address = new Address();
-                        if (StringUtils.isNotBlank(request.getParameter("inputCountry"))) {
-                            address.setCountry(StringUtils.trim(request.getParameter("inputCountry")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputCity"))) {
-                            address.setCity(StringUtils.trim(request.getParameter("inputCity")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputStreet"))) {
-                            address.setStreet(StringUtils.trim(request.getParameter("inputStreet")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputHouse"))) {
-                            address.setHouse(StringUtils.trim(request.getParameter("inputHouse")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputApartment"))) {
-                            address.setApartment(StringUtils.trim(request.getParameter("inputApartment")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputIndex"))) {
-                            address.setIndex(StringUtils.trim(request.getParameter("inputIndex")));
-                        }
-                        people.setAddress(address);
+                        People people = DispatcherServletHandler.getPeopleFromAddEdit(request);
 
                         peopleDao.update(people);
                     } else if ("search".equals(request.getParameter("search"))) {
-                        SearchDto searchDto = new SearchDto();
-
-                        if (StringUtils.isNotBlank(request.getParameter("inputFirstName"))) {
-                            searchDto.setFirstName(StringUtils.trim(request.getParameter("inputFirstName")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputLastName"))) {
-                            searchDto.setLastName(StringUtils.trim(request.getParameter("inputLastName")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputSurName"))) {
-                            searchDto.setSurName(StringUtils.trim(request.getParameter("inputSurName")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputDateFrom"))) {
-                            try {
-                                Date date = DateUtils.parseDate(StringUtils.trim(request.getParameter("inputDateFrom")), "yyyy-MM-dd");
-                                searchDto.setDateFrom(date);
-                            } catch (ParseException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputDateTo"))) {
-                            try {
-                                Date date = DateUtils.parseDate(StringUtils.trim(request.getParameter("inputDateTo")), "yyyy-MM-dd");
-                                searchDto.setDateTo(date);
-                            } catch (ParseException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputSex"))) {
-                            searchDto.setSex(Sex.convertToSex(request.getParameter("inputSex")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputNationality"))) {
-                            searchDto.setNationality(StringUtils.trim(request.getParameter("inputNationality")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("relationshipStatus"))) {
-                            searchDto.setRelationshipStatus(RelationshipStatus.convertToRelationshipStatus(request.getParameter("relationshipStatus")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputWebSite"))) {
-                            searchDto.setWebSite(StringUtils.trim(request.getParameter("inputWebSite")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputEmail"))) {
-                            searchDto.setEmail(StringUtils.trim(request.getParameter("inputEmail")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputJob"))) {
-                            searchDto.setJob(StringUtils.trim(request.getParameter("inputJob")));
-                        }
-
-                        Address address = new Address();
-                        if (StringUtils.isNotBlank(request.getParameter("inputCountry"))) {
-                            address.setCountry(StringUtils.trim(request.getParameter("inputCountry")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputCity"))) {
-                            address.setCity(StringUtils.trim(request.getParameter("inputCity")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputStreet"))) {
-                            address.setStreet(StringUtils.trim(request.getParameter("inputStreet")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputHouse"))) {
-                            address.setHouse(StringUtils.trim(request.getParameter("inputHouse")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputApartment"))) {
-                            address.setApartment(StringUtils.trim(request.getParameter("inputApartment")));
-                        }
-                        if (StringUtils.isNotBlank(request.getParameter("inputIndex"))) {
-                            address.setIndex(StringUtils.trim(request.getParameter("inputIndex")));
-                        }
+                        SearchDto searchDto = getSearchDto(request);
+                        Address address = DispatcherServletHandler.getAddress(request);
                         searchDto.setAddress(address);
 
                         dispatcher = getServletContext().getRequestDispatcher("/WEB-INF/view/contactList.jsp");
                         List<People> peoples = searchDao.getBySearch(searchDto);
-                        request.setAttribute("peoples", peoples);
+                        setAttributes(request, peoples, LIMIT_DEFAULT, OFFSET_DEFAULT);
                         break;
+                    } else if (isNotEmpty(request.getParameter("to"))) {
+                        String[] emailsSend = split(request.getParameter("to"), ", ");
+                        List<People> peoples = searchDao.getByEmail(emailsSend);
+                        if ("-None selected-".equals(request.getParameter("templateSelect"))) {
+                            Mail.sendMailText(peoples, request.getParameter("subject"), request.getParameter("textareaText"));
+                        } else {
+                            Mail.sendMail(peoples, request.getParameter("subject"), request.getParameter("templateSelect"));
+                        }
                     }
-
                     dispatcher = getServletContext().getRequestDispatcher("/WEB-INF/view/contactList.jsp");
-                    List<People> peoples = peopleDao.getAll();
-                    request.setAttribute("peoples", peoples);
+                    List<People> peoples = peopleDao.getAll(LIMIT_DEFAULT, OFFSET_DEFAULT);
+                    setAttributes(request, peoples, LIMIT_DEFAULT, OFFSET_DEFAULT);
+
             }
         }
-
         dispatcher.forward(request, response);
     }
 }

@@ -16,9 +16,9 @@ public class MailTemplates {
 
         List<String> templates = new ArrayList<>();
         for (TemplateEnum template : TemplateEnum.values()) {
-            ST birthday = group.getInstanceOf(template.getDisplayName());
-            birthday.add("name", "$Name");
-            templates.add(birthday.render());
+            ST textTemplate = group.getInstanceOf(template.getDisplayName());
+            textTemplate.add("name", "$Name");
+            templates.add(textTemplate.render());
         }
 
         return templates;
@@ -27,9 +27,18 @@ public class MailTemplates {
     public static String loadFromFile(String templateName) {
         STGroup group = new STGroupFile("template.stg");
 
-        ST birthday = group.getInstanceOf(templateName);
-        birthday.add("name", "$Name");
+        ST textTemplate = group.getInstanceOf(templateName);
+        textTemplate.add("name", "$Name$");
 
-        return birthday.render();
+        return textTemplate.render();
+    }
+
+    public static String loadFromFile(String templateName, String name) {
+        STGroup group = new STGroupFile("template.stg");
+
+        ST textTemplate = group.getInstanceOf(templateName);
+        textTemplate.add("name", name);
+
+        return textTemplate.render();
     }
 }

@@ -17,6 +17,7 @@ CREATE TABLE `people` (
   `web_site`            VARCHAR(50),
   `email`               VARCHAR(50)      NOT NULL UNIQUE,
   `job`                 VARCHAR(50),
+  `photo`               MEDIUMBLOB,
   PRIMARY KEY (`id`)
 )
   ENGINE =InnoDB
@@ -65,3 +66,7 @@ CREATE TABLE `phone` (
 )
   ENGINE =InnoDB
   DEFAULT CHARSET =utf8;
+
+
+INSERT INTO people (first_name, last_name, sur_name, birth_date, sex, nationality, relationship_status, web_site, email, job)
+VALUES (first1, last1, surname1, ?, ?, ?, ?, ?, ?, ?)

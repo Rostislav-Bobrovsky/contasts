@@ -40,6 +40,7 @@
       <column name="web_site" sqlType="VARCHAR" precision="50" scale="0" nullable="true" jdbcType="12"/>
       <column name="email" sqlType="VARCHAR" precision="50" scale="0" nullable="false" jdbcType="12"/>
       <column name="job" sqlType="VARCHAR" precision="50" scale="0" nullable="true" jdbcType="12"/>
+      <column name="photo" sqlType="MEDIUMBLOB" precision="16777215" scale="0" nullable="true" jdbcType="-4"/>
       <primary-key name="PRIMARY" columns="id"/>
       <exported-key name="address_ibfk_1" table="address" schema="" catalog="contacts_rostislav" columns="people_id"/>
       <exported-key name="attachment_ibfk_1" table="attachment" schema="" catalog="contacts_rostislav" columns="people_id"/>

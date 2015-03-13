@@ -14,14 +14,14 @@
     <header class="page-header">
         <h1 class="text-center">Send</h1>
     </header>
-    <form action="${pageContext.request.contextPath}/contacts" method="post">
+    <form action="${pageContext.request.contextPath}/contacts/1" method="post" onsubmit="return checkSendForm();">
         <div class="row">
             <div class="form-horizontal">
                 <div class="form-group">
                     <label for="to" class="col-lg-1 control-label">To</label>
 
                     <div class="col-lg-11">
-                        <input type="text" class="form-control" id="to" name="to" disabled="disabled"
+                        <input type="text" class="form-control" id="to" name="to" disabled
                                value="${emails}">
                     </div>
                 </div>
@@ -60,10 +60,10 @@
             </div>
             <div class="row">
                 <div class="col-lg-6">
-                    <a class="btn btn-default btn-lg pull-right" href="http://localhost:8080/contacts">Cancel</a>
+                    <a class="btn btn-default btn-lg pull-right" href="${pageContext.request.contextPath}/contacts/1">Cancel</a>
                 </div>
                 <div class="col-lg-6">
-                    <button type="submit" class="btn btn-primary btn-lg" onclick="checkSendForm();">Send mail</button>
+                    <button type="submit" class="btn btn-primary btn-lg">Send mail</button>
                 </div>
             </div>
         </div>

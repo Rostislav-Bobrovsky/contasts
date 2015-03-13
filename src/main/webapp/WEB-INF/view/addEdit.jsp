@@ -18,17 +18,28 @@
         <h1 class="text-center">${buttonForm}</h1>
     </header>
 
-    <form action="${pageContext.request.contextPath}/contacts" method="post">
+    <form action="${pageContext.request.contextPath}/contacts/1" method="post"
+          onsubmit="return checkEmptyFormAddEdit('${buttonForm}');" enctype="multipart/form-data">
         <div class="row">
             <div class="col-lg-4">
                 <div class="row">
                     <input type="hidden" name="idPeople" value="${people.id}">
+
                     <div class="col-lg-12">
                         <div class="col-lg-4">
-                            <br>
-                            <img src="${pageContext.request.contextPath}/resources/img/UserProfile2.png" height="110"
-                                 width="110"
-                                 alt="Profile photo" class="img-rounded">
+                            <input type="file" style="visibility: hidden" id="inputPhoto" name="inputPhoto">
+                            <input type="hidden" id="isUploadImage" name="isUploadImage" value="false">
+
+                            <c:if test="${empty uploadImage}">
+                                <img src="${pageContext.request.contextPath}/resources/img/UserProfile.png"
+                                     height="110"
+                                     width="110"
+                                     alt="Profile photo" class="img-rounded" onclick="chooseImage();">
+                            </c:if>
+                            <c:if test="${not empty uploadImage}">
+                                <img src="${uploadImage}" height="110" width="110" alt="Profile photo"
+                                     class="img-rounded" onclick="chooseImage();">
+                            </c:if>
                         </div>
                         <div class="col-lg-8">
                             <input type="text" class="form-control" id="firstName" name="firstName"
@@ -239,23 +250,6 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="row">
-                    <nav class="pull-right">
-                        <ul class="pagination">
-                            <li>
-                                <a href="#" aria-label="Previous">
-                                    <span aria-hidden="true">&laquo;</span>
-                                </a>
-                            </li>
-                            <li><a href="#">1</a></li>
-                            <li>
-                                <a href="#" aria-label="Next">
-                                    <span aria-hidden="true">&raquo;</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
                 <br><br>
 
                 <div class="row pull-right">
@@ -286,34 +280,17 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="row">
-                    <nav class="pull-right">
-                        <ul class="pagination">
-                            <li>
-                                <a href="#" aria-label="Previous">
-                                    <span aria-hidden="true">&laquo;</span>
-                                </a>
-                            </li>
-                            <li><a href="#">1</a></li>
-                            <li>
-                                <a href="#" aria-label="Next">
-                                    <span aria-hidden="true">&raquo;</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
             </div>
 
             <input id="addOrEdit" name="addOrEdit" type="hidden"/>
         </div>
         <div class="row">
             <div class="col-lg-6">
-                <a class="btn btn-default btn-lg pull-right" href="http://localhost:8080/contacts">Cancel</a>
+                <a class="btn btn-default btn-lg pull-right"
+                   href="${pageContext.request.contextPath}/contacts/1">Cancel</a>
             </div>
             <div class="col-lg-6">
-                <button type="submit" class="btn btn-success btn-lg"
-                        onclick="checkEmptyFormAddEdit('${buttonForm}');">${buttonForm} contact
+                <button type="submit" class="btn btn-success btn-lg">${buttonForm} contact
                 </button>
             </div>
         </div>
