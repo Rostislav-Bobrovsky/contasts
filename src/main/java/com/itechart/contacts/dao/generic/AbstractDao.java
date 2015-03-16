@@ -11,5 +11,5 @@ public abstract class AbstractDao<T> implements GenericDao<T, Long> {
 
     public abstract T update(T t);
 
-    public abstract List<T> getAll(int limit, int offset);
+    public abstract List<T> find(int limit, int offset);
 }

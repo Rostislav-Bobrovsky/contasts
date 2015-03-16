@@ -11,5 +11,5 @@ public interface GenericDao<T, PK> {
 
     T update(T t);
 
-    List<T> getAll(int limit, int offset);
+    List<T> find(int limit, int offset);
 }

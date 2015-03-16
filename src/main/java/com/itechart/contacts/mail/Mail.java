@@ -5,17 +5,18 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.mail.*;
-import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
-import java.util.logging.Level;
 
 public class Mail {
     private final static Logger logger = LogManager.getLogger(Mail.class);
+    public static final String EMAIL = "rostislav.bobrovsky@gmail.com";
+    public static final String PASSWORD = "****";
 
-    public static void sendMail(List<People> peoples, String subject, String template) {
+    private static Session getSession() {
         Properties props = new Properties();
         props.put("mail.smtp.host", "smtp.gmail.com");
         props.put("mail.smtp.socketFactory.port", "465");
@@ -23,75 +24,56 @@ public class Mail {
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.port", "465");
 
-        Session session = Session.getInstance(props,
-                new javax.mail.Authenticator() {
+        return Session.getInstance(props,
+                new Authenticator() {
                     protected PasswordAuthentication getPasswordAuthentication() {
                         return new PasswordAuthentication(
-                                "baturaoleg@gmail.com", "bat130395");
+                                EMAIL, PASSWORD);
                     }
                 });
+    }
+
+    public static void sendMail(List<People> peoples, String subject, String template) {
+        logger.info("{}:{}; parameters: {}, {}",  Thread.currentThread().getStackTrace()[1].getClassName(),
+                Thread.currentThread().getStackTrace()[1].getMethodName(), subject, template);
+
+        Session session = getSession();
 
         try {
-            for (int i = 0; i < peoples.size(); ++i) {
+            for (People people : peoples) {
                 MimeMessage message = new MimeMessage(session);
-                message.setFrom(new InternetAddress("baturaoleg@gmail.com"));
-                message.addRecipient(Message.RecipientType.TO, new InternetAddress(peoples.get(i).getEmail()));
+                message.setFrom(new InternetAddress("EMAIL"));
+                message.addRecipient(Message.RecipientType.TO, new InternetAddress(people.getEmail()));
                 message.setSubject(subject);
-                message.setText(MailTemplates.loadFromFile(template, peoples.get(i).getFirstName()));
+                message.setText(MailTemplates.loadFromFile(template, people.getFirstName()));
 
-                // send message
                 Transport.send(message);
-
-//                String s1 = peoples.get(i).getEmail();
-//                String s2 = MailTemplates.loadFromFile(template, peoples.get(i).getFirstName());
-//                System.out.println(s1 + '\n' + s2);
             }
-        } catch (AddressException e) {
-            // TODO Auto-generated catch block
-            logger.error(Level.INFO, e);
         } catch (MessagingException e) {
-            // TODO Auto-generated catch block
-            logger.error(Level.INFO, e);
+            logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                    Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
         }
     }
 
     public static void sendMailText(List<People> peoples, String subject, String text) {
-        Properties props = new Properties();
-        props.put("mail.smtp.host", "smtp.gmail.com");
-        props.put("mail.smtp.socketFactory.port", "465");
-        props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.port", "465");
+        logger.info("{}:{}; parameters: {}, {}",  Thread.currentThread().getStackTrace()[1].getClassName(),
+                Thread.currentThread().getStackTrace()[1].getMethodName(), subject, text);
 
-        Session session = Session.getInstance(props,
-                new javax.mail.Authenticator() {
-                    protected PasswordAuthentication getPasswordAuthentication() {
-                        return new PasswordAuthentication(
-                                "baturaoleg@gmail.com", "bat130395");
-                    }
-                });
+        Session session = getSession();
 
         try {
-            for (int i = 0; i < peoples.size(); ++i) {
+            for (People people : peoples) {
                 MimeMessage message = new MimeMessage(session);
-                message.setFrom(new InternetAddress("baturaoleg@gmail.com"));
-                message.addRecipient(Message.RecipientType.TO, new InternetAddress(peoples.get(i).getEmail()));
+                message.setFrom(new InternetAddress("EMAIL"));
+                message.addRecipient(Message.RecipientType.TO, new InternetAddress(people.getEmail()));
                 message.setSubject(subject);
                 message.setText(text);
 
-                // send message
                 Transport.send(message);
-
-//                String s1 = peoples.get(i).getEmail();
-//                String s2 = text;
-//                System.out.println(s1 + '\n' + s2);
             }
-        } catch (AddressException e) {
-            // TODO Auto-generated catch block
-            logger.error(Level.INFO, e);
         } catch (MessagingException e) {
-            // TODO Auto-generated catch block
-            logger.error(Level.INFO, e);
+            logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                    Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
         }
     }
 }

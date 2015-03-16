@@ -58,4 +58,13 @@ public class Phone {
     public void setComment(String comment) {
         this.comment = comment;
     }
+
+    public String toString() {
+        return "id: " + id +
+                "; countryCode: " + countryCode +
+                "; operatorCode: " + operatorCode +
+                "; phoneNumber: " + phoneNumber +
+                "; phoneType: " + phoneType +
+                "; comment: " + comment;
+    }
 }

@@ -8,7 +8,7 @@ import java.util.Date;
 public class SearchDto {
     private String firstName;
     private String lastName;
-    private String surName;
+    private String secondName;
     private Date dateFrom;
     private Date dateTo;
     private Sex sex;
@@ -35,12 +35,12 @@ public class SearchDto {
         this.lastName = lastName;
     }
 
-    public String getSurName() {
-        return surName;
+    public String getSecondName() {
+        return secondName;
     }
 
-    public void setSurName(String surName) {
-        this.surName = surName;
+    public void setSecondName(String secondName) {
+        this.secondName = secondName;
     }
 
     public Date getDateFrom() {
@@ -113,5 +113,20 @@ public class SearchDto {
 
     public void setAddress(Address address) {
         this.address = address;
+    }
+
+    public String toString() {
+        return "firstName: " + firstName +
+                "; lastName: " + lastName +
+                "; secondName: " + secondName +
+                "; dateFrom: " + dateFrom +
+                "; dateTo: " + dateTo +
+                "; sex: " + sex +
+                "; nationality: " + nationality +
+                "; relationshipStatus: " + relationshipStatus +
+                "; webSite: " + webSite +
+                "; email: " + email +
+                "; job: " + job +
+                "; address: " + address.toString();
     }
 }

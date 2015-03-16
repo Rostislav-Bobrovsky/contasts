@@ -1,21 +1,21 @@
 USE contacts_rostislav;
 
-# DROP TABLE IF EXISTS phone;
-# DROP TABLE IF EXISTS attachment;
-# DROP TABLE IF EXISTS address;
-# DROP TABLE IF EXISTS people;
+DROP TABLE IF EXISTS phone;
+DROP TABLE IF EXISTS attachment;
+DROP TABLE IF EXISTS address;
+DROP TABLE IF EXISTS people;
 
 CREATE TABLE `people` (
   `id`                  INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `first_name`          VARCHAR(20)      NOT NULL,
   `last_name`           VARCHAR(20)      NOT NULL,
-  `sur_name`            VARCHAR(20),
+  `second_name`         VARCHAR(20),
   `birth_date`          TIMESTAMP        NULL,
   `sex`                 ENUM('m', 'f'),
   `nationality`         VARCHAR(20),
   `relationship_status` ENUM('nosel', 'sngl', 'rel', 'eng', 'mar', 'lov', 'cmpl', 'srch'),
   `web_site`            VARCHAR(50),
-  `email`               VARCHAR(50)      NOT NULL UNIQUE,
+  `email`               VARCHAR(50)      NOT NULL,
   `job`                 VARCHAR(50),
   `photo`               MEDIUMBLOB,
   PRIMARY KEY (`id`)
@@ -40,11 +40,13 @@ CREATE TABLE `address` (
   DEFAULT CHARSET =utf8;
 
 CREATE TABLE `attachment` (
-  `id`              INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `people_id`       INT(11) UNSIGNED NOT NULL,
-  `attachment_name` VARCHAR(50)      NOT NULL,
-  `birth_date`      TIMESTAMP        NOT NULL,
-  `comment`         VARCHAR(200),
+  `id`             INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `people_id`      INT(11) UNSIGNED NOT NULL,
+  `generated_name` VARCHAR(50)      NOT NULL,
+  `original_name`  VARCHAR(50)      NOT NULL,
+  `type`           VARCHAR(10)      NOT NULL,
+  `upload_date`    TIMESTAMP        NOT NULL,
+  `comment`        VARCHAR(200),
   PRIMARY KEY (`id`),
   FOREIGN KEY (people_id) REFERENCES people (id)
     ON DELETE CASCADE
@@ -66,7 +68,3 @@ CREATE TABLE `phone` (
 )
   ENGINE =InnoDB
   DEFAULT CHARSET =utf8;
-
-
-INSERT INTO people (first_name, last_name, sur_name, birth_date, sex, nationality, relationship_status, web_site, email, job)
-VALUES (first1, last1, surname1, ?, ?, ?, ?, ?, ?, ?)

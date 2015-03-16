@@ -58,4 +58,13 @@ public class Address {
     public void setIndex(String index) {
         this.index = index;
     }
+
+    public String toString() {
+        return " country: " + country +
+               "; city: " + city +
+               "; street: " + street +
+               "; house: " + house +
+               "; apartment: " + apartment +
+               "; index: " + index;
+    }
 }

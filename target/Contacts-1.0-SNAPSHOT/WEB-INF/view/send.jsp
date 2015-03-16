@@ -7,15 +7,17 @@
     <title>Send</title>
     <link href="${pageContext.request.contextPath}/resources/css/styles.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/resources/css/bootstrap.css" rel="stylesheet">
-    <script src="${pageContext.request.contextPath}/resources/js/script.js"></script>
+    <script src="${pageContext.request.contextPath}/resources/js/formSend.js"></script>
 </head>
 <body>
 <div class="container">
     <header class="page-header">
         <h1 class="text-center">Send</h1>
     </header>
-    <form action="${pageContext.request.contextPath}/contacts/1" method="post" onsubmit="return checkSendForm();">
-        <div class="row">
+
+    <form action="list?action=sended&limit=${limit}&offset=${offset}" method="post" onsubmit="return checkSendForm();">
+        <%--<form action="${pageContext.request.contextPath}/contacts/1" method="post" onsubmit="return checkSendForm();">--%>
+        <div class="row col-lg-12">
             <div class="form-horizontal">
                 <div class="form-group">
                     <label for="to" class="col-lg-1 control-label">To</label>
@@ -49,8 +51,8 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <div class="form-group">
-                        <div class="col-lg-12">
+                    <div id="lineTextarea" class="form-group">
+                        <div class="col-lg-offset-1 col-lg-11">
                             <textarea id="textareaText" name="textareaText" class="form-control textarea-vertical"
                                       rows="10"
                                       placeholder="Compose email"></textarea>
@@ -60,11 +62,15 @@
             </div>
             <div class="row">
                 <div class="col-lg-6">
-                    <a class="btn btn-default btn-lg pull-right" href="${pageContext.request.contextPath}/contacts/1">Cancel</a>
+                    <a class="btn btn-default btn-lg pull-right" href="list?limit=${limit}&offset=${offset}">Cancel</a>
                 </div>
-                <div class="col-lg-6">
-                    <button type="submit" class="btn btn-primary btn-lg">Send mail</button>
-                </div>
+                <c:if test="${not empty emails}">
+                    <div class="col-lg-6">
+                        <button type="submit" class="btn btn-primary btn-lg"><span
+                                class="glyphicon glyphicon-send"></span>&nbsp;Send mail
+                        </button>
+                    </div>
+                </c:if>
             </div>
         </div>
     </form>

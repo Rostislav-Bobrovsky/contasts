@@ -8,19 +8,20 @@
     <title>Search</title>
     <link href="${pageContext.request.contextPath}/resources/css/bootstrap.css" rel="stylesheet">
     <script src="${pageContext.request.contextPath}/resources/js/script.js"></script>
+    <script src="${pageContext.request.contextPath}/resources/js/formSearch.js"></script>
 </head>
 <body>
 <div class="container">
     <header class="page-header">
         <h1 class="text-center">Search</h1>
     </header>
-    <form action="${pageContext.request.contextPath}/contacts" method="post" onsubmit="return checkSearchForm();">
+    <form action="list?action=detected&limit=${limit}&offset=0" method="post" onsubmit="return checkSearchForm();">
         <div class="row">
             <div class="form-horizontal">
                 <div class="form-group">
                     <label for="inputFirstName" class="col-lg-3 control-label">First Name</label>
 
-                    <div class="col-lg-9">
+                    <div class="col-lg-8">
                         <input type="text" class="form-control" id="inputFirstName" name="inputFirstName"
                                placeholder="First Name">
                     </div>
@@ -30,7 +31,7 @@
                 <div class="form-group">
                     <label for="inputLastName" class="col-lg-3 control-label">Last Name</label>
 
-                    <div class="col-lg-9">
+                    <div class="col-lg-8">
                         <input type="text" class="form-control" id="inputLastName" name="inputLastName"
                                placeholder="Last Name">
                     </div>
@@ -38,11 +39,11 @@
             </div>
             <div class="form-horizontal">
                 <div class="form-group">
-                    <label for="inputSurName" class="col-lg-3 control-label">Surname</label>
+                    <label for="inputSecondName" class="col-lg-3 control-label">Second Name</label>
 
-                    <div class="col-lg-9">
-                        <input type="text" class="form-control" id="inputSurName" name="inputSurName"
-                               placeholder="Surname">
+                    <div class="col-lg-8">
+                        <input type="text" class="form-control" id="inputSecondName" name="inputSecondName"
+                               placeholder="Second Name">
                     </div>
                 </div>
             </div>
@@ -50,25 +51,29 @@
                 <div class="form-group">
                     <label for="inputDateFrom" class="col-lg-3 control-label">Birthday</label>
 
-                    <label for="inputDateFrom" class="col-lg-1 control-label">from</label>
+                    <div id="lineDateFrom">
+                        <label for="inputDateFrom" class="col-lg-1 control-label">from</label>
 
-                    <div class="col-lg-3">
-                        <input class="form-control" type="text" name="inputDateFrom" id="inputDateFrom"
-                               placeholder="yyyy-MM-dd">
+                        <div class="col-lg-3">
+                            <input class="form-control" type="text" name="inputDateFrom" id="inputDateFrom"
+                                   placeholder="yyyy-MM-dd">
+                        </div>
                     </div>
 
-                    <label for="inputDateTo" class="col-lg-1 control-label">to</label>
+                    <div id="lineDateTo">
+                        <label for="inputDateTo" class="col-lg-1 control-label">to</label>
 
-                    <div class="col-lg-3">
-                        <input class="form-control" type="text" name="inputDateTo" id="inputDateTo"
-                               placeholder="yyyy-MM-dd">
+                        <div class="col-lg-3">
+                            <input class="form-control" type="text" name="inputDateTo" id="inputDateTo"
+                                   placeholder="yyyy-MM-dd">
+                        </div>
                     </div>
                 </div>
                 <div class="form-horizontal">
                     <div class="form-group">
                         <label for="inputSex" class="col-lg-3 control-label">Sex</label>
 
-                        <div class="col-lg-9">
+                        <div class="col-lg-8">
                             <select id="inputSex" name="inputSex" class="form-control">
                                 <option>-None selected-</option>
                                 <c:forEach var="sex" items="<%=Sex.values()%>">
@@ -82,7 +87,7 @@
                     <div class="form-group">
                         <label for="inputNationality" class="col-lg-3 control-label">Nationality</label>
 
-                        <div class="col-lg-9">
+                        <div class="col-lg-8">
                             <input type="text" class="form-control" id="inputNationality" name="inputNationality"
                                    placeholder="Nationality">
                         </div>
@@ -92,7 +97,7 @@
                     <div class="form-group">
                         <label for="relationshipStatus" class="col-lg-3 control-label">Relationship status</label>
 
-                        <div class="col-lg-9">
+                        <div class="col-lg-8">
                             <select id="relationshipStatus" name="relationshipStatus" class="form-control">
                                 <option>---</option>
                                 <c:forEach var="relationshipSt" items="<%=RelationshipStatus.values()%>">
@@ -106,7 +111,7 @@
                     <div class="form-group">
                         <label for="inputWebSite" class="col-lg-3 control-label">Web Site</label>
 
-                        <div class="col-lg-9">
+                        <div class="col-lg-8">
                             <input type="text" class="form-control" id="inputWebSite" name="inputWebSite"
                                    placeholder="Web Site">
                         </div>
@@ -116,7 +121,7 @@
                     <div class="form-group">
                         <label for="inputEmail" class="col-lg-3 control-label">Email</label>
 
-                        <div class="col-lg-9">
+                        <div class="col-lg-8">
                             <input type="text" class="form-control" id="inputEmail" name="inputEmail"
                                    placeholder="Email">
                         </div>
@@ -126,7 +131,7 @@
                     <div class="form-group">
                         <label for="inputJob" class="col-lg-3 control-label">Job</label>
 
-                        <div class="col-lg-9">
+                        <div class="col-lg-8">
                             <input type="text" class="form-control" id="inputJob" name="inputJob" placeholder="Job">
                         </div>
                     </div>
@@ -149,7 +154,7 @@
                 <div class="form-group">
                     <label for="inputStreet" class="col-lg-3 control-label">Address</label>
 
-                    <div class="col-lg-5">
+                    <div class="col-lg-4">
                         <input type="text" class="form-control" id="inputStreet" name="inputStreet"
                                placeholder="Street">
                     </div>
@@ -166,7 +171,7 @@
                 <div class="form-group">
                     <label for="inputIndex" class="col-lg-3 control-label">Index</label>
 
-                    <div class="col-lg-9">
+                    <div class="col-lg-8">
                         <input type="text" class="form-control" id="inputIndex" name="inputIndex" placeholder="Index">
                     </div>
                 </div>
@@ -174,12 +179,18 @@
         </div>
         <input type="hidden" name="search" value="search">
 
+        <div id="messageError" class="row hidden">
+            <p class="bg-danger text-center">Fill any field</p>
+        </div>
+
         <div class="row">
             <div class="col-lg-6">
-                <a class="btn btn-default btn-lg pull-right" href="${pageContext.request.contextPath}/contacts/1">Cancel</a>
+                <a class="btn btn-default btn-lg pull-right" href="list?limit=${limit}&offset=${offset}">Cancel</a>
             </div>
             <div class="col-lg-6">
-                <button type="submit" class="btn btn-info btn-lg pull-left">Search</button>
+                <button type="submit" class="btn btn-info btn-lg pull-left"><span
+                        class="glyphicon glyphicon-search"></span>&nbsp;Search
+                </button>
             </div>
         </div>
     </form>

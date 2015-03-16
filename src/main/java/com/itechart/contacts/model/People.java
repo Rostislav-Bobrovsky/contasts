@@ -11,7 +11,7 @@ public class People {
     private int id;
     private String firstName;
     private String lastName;
-    private String surName;
+    private String secondName;
     private Date birthday;
     private Sex sex;
     private String nationality;
@@ -21,6 +21,7 @@ public class People {
     private String job;
     private Address address;
     private List<Phone> phones;
+    private List<Attachment> attachments;
     private InputStream photo;
 
     public People() {
@@ -50,12 +51,12 @@ public class People {
         this.lastName = lastName;
     }
 
-    public String getSurName() {
-        return surName;
+    public String getSecondName() {
+        return secondName;
     }
 
-    public void setSurName(String surName) {
-        this.surName = surName;
+    public void setSecondName(String secondName) {
+        this.secondName = secondName;
     }
 
     public Date getBirthday() {
@@ -130,11 +131,35 @@ public class People {
         this.phones = phones;
     }
 
+    public List<Attachment> getAttachments() {
+        return attachments;
+    }
+
+    public void setAttachments(List<Attachment> attachments) {
+        this.attachments = attachments;
+    }
+
     public InputStream getPhoto() {
         return photo;
     }
 
     public void setPhoto(InputStream photo) {
         this.photo = photo;
+    }
+
+    public String toString() {
+        return "id: " + id +
+                "; firstName: " + firstName +
+                "; lastName: " + lastName +
+                "; secondName: " + secondName +
+                "; birthday: " + birthday +
+                "; sex: " + sex +
+                "; nationality: " + nationality +
+                "; relationshipStatus: " + relationshipStatus +
+                "; webSite: " + webSite +
+                "; email: " + email +
+                "; job: " + job +
+                "; address: " + address.toString() +
+                "; phones: " + phones.toString();
     }
 }

@@ -4,13 +4,13 @@ import com.itechart.contacts.dao.generic.AbstractDao;
 import com.itechart.contacts.dao.generic.ConnectionFactory;
 import com.itechart.contacts.model.*;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.InputStream;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 
@@ -20,32 +20,42 @@ import java.util.List;
 public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
     private final static Logger logger = LogManager.getLogger(PeopleDaoImpl.class);
 
+    private void preparedStatementSetPeopleAttributes(People people, PreparedStatement preparedStatement) throws SQLException {
+        logger.info("{}:{}; parameters: {}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                Thread.currentThread().getStackTrace()[1].getMethodName(), people);
+
+        preparedStatement.setString(1, people.getFirstName());
+        preparedStatement.setString(2, people.getLastName());
+        preparedStatement.setString(3, people.getSecondName());
+        if (people.getBirthday() != null) {
+            java.util.Date birthday = getDateWithoutTime(people.getBirthday());
+            preparedStatement.setTimestamp(4, new Timestamp(birthday.getTime()));
+        } else {
+            preparedStatement.setTimestamp(4, null);
+        }
+        preparedStatement.setString(5, Sex.convertToString(people.getSex()));
+        preparedStatement.setString(6, people.getNationality());
+        preparedStatement.setString(7, RelationshipStatus.convertToString(people.getRelationshipStatus()));
+        preparedStatement.setString(8, people.getWebSite());
+        preparedStatement.setString(9, people.getEmail());
+        preparedStatement.setString(10, people.getJob());
+    }
+
     @Override
     public void create(People people) {
+        logger.info("{}:{}; parameters: {}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                Thread.currentThread().getStackTrace()[1].getMethodName(), people);
+
         Connection connection = ConnectionFactory.openConnection();
         PreparedStatement preparedStatement = null;
         try {
-            preparedStatement = connection.prepareStatement("INSERT INTO people(first_name, last_name, sur_name, birth_date, sex, nationality, relationship_status, web_site, email, job, photo) " +
+            preparedStatement = connection.prepareStatement("INSERT INTO people(first_name, last_name, second_name, birth_date, sex, nationality, relationship_status, web_site, email, job, photo) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
-            preparedStatement.setString(1, people.getFirstName());
-            preparedStatement.setString(2, people.getLastName());
-            preparedStatement.setString(3, people.getSurName());
-            if (people.getBirthday() != null) {
-                java.util.Date birthday = getDateWithoutTime(people);
-                preparedStatement.setTimestamp(4, new Timestamp(birthday.getTime()));
-            } else {
-                preparedStatement.setTimestamp(4, null);
-            }
-            preparedStatement.setString(5, Sex.convertToString(people.getSex()));
-            preparedStatement.setString(6, people.getNationality());
-            preparedStatement.setString(7, RelationshipStatus.convertToString(people.getRelationshipStatus()));
-            preparedStatement.setString(8, people.getWebSite());
-            preparedStatement.setString(9, people.getEmail());
-            preparedStatement.setString(10, people.getJob());
+            preparedStatementSetPeopleAttributes(people, preparedStatement);
             if (people.getPhoto() != null) {
                 preparedStatement.setBlob(11, people.getPhoto());
             } else {
-                preparedStatement.setNull(11, java.sql.Types.BLOB);
+                preparedStatement.setNull(11, Types.BLOB);
             }
             preparedStatement.executeUpdate();
 
@@ -55,30 +65,47 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
 
             preparedStatement = connection.prepareStatement("INSERT INTO address(people_id, country, city, street, house, apartment, `index`) " +
                     "VALUE (?, ?, ?, ?, ?, ?, ?)");
+            Address address = people.getAddress();
             preparedStatement.setInt(1, idPeople);
-            preparedStatement.setString(2, people.getAddress().getCountry());
-            preparedStatement.setString(3, people.getAddress().getCity());
-            preparedStatement.setString(4, people.getAddress().getStreet());
-            preparedStatement.setString(5, people.getAddress().getHouse());
-            preparedStatement.setString(6, people.getAddress().getApartment());
-            preparedStatement.setString(7, people.getAddress().getIndex());
+            preparedStatement.setString(2, address.getCountry());
+            preparedStatement.setString(3, address.getCity());
+            preparedStatement.setString(4, address.getStreet());
+            preparedStatement.setString(5, address.getHouse());
+            preparedStatement.setString(6, address.getApartment());
+            preparedStatement.setString(7, address.getIndex());
             preparedStatement.executeUpdate();
 
-            List<Phone> phones = people.getPhones();
-            for (int i = 0; i < phones.size(); ++i) {
+            for (Phone phone : people.getPhones()) {
                 preparedStatement = connection.prepareStatement("INSERT INTO phone(people_id, country_code, operator_code, phone_number, phone_type, comment) " +
                         "VALUE (?, ?, ?, ?, ?, ?)");
                 preparedStatement.setInt(1, idPeople);
+                preparedStatement.setString(2, phone.getCountryCode());
+                preparedStatement.setString(3, phone.getOperatorCode());
+                preparedStatement.setString(4, phone.getPhoneNumber());
+                preparedStatement.setString(5, PhoneType.convertToString(phone.getPhoneType()));
+                preparedStatement.setString(6, phone.getComment());
+                preparedStatement.executeUpdate();
+            }
 
-                preparedStatement.setString(2, phones.get(i).getCountryCode());
-                preparedStatement.setString(3, phones.get(i).getOperatorCode());
-                preparedStatement.setString(4, phones.get(i).getPhoneNumber());
-                preparedStatement.setString(5, PhoneType.convertToString(phones.get(i).getPhoneType()));
-                preparedStatement.setString(6, phones.get(i).getComment());
+            for (Attachment attachment : people.getAttachments()) {
+                preparedStatement = connection.prepareStatement("INSERT INTO attachment(people_id, generated_name, original_name, type, upload_date, comment) " +
+                        "VALUE (?, ?, ?, ?, ?, ?)");
+                preparedStatement.setInt(1, idPeople);
+                preparedStatement.setString(2, attachment.getGeneratedName());
+                preparedStatement.setString(3, attachment.getOriginalName());
+                preparedStatement.setString(4, attachment.getType());
+                if (attachment.getUploadDate() != null) {
+                    java.util.Date uploadDate = getDateWithoutTime(attachment.getUploadDate());
+                    preparedStatement.setTimestamp(5, new Timestamp(uploadDate.getTime()));
+                } else {
+                    preparedStatement.setTimestamp(5, null);
+                }
+                preparedStatement.setString(6, attachment.getComment());
                 preparedStatement.executeUpdate();
             }
         } catch (SQLException e) {
-            logger.error(Level.INFO, e);
+            logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                    Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
         } finally {
             try {
                 if (preparedStatement != null) {
@@ -88,28 +115,33 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
                     connection.close();
                 }
             } catch (SQLException e) {
-                logger.error(Level.INFO, e);
+                logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                        Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
             }
         }
     }
 
-    private java.util.Date getDateWithoutTime(People people) {
-        java.util.Date birthday = people.getBirthday();
+    private java.util.Date getDateWithoutTime(java.util.Date date) {
+        logger.info("{}:{}; parameters: {}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                Thread.currentThread().getStackTrace()[1].getMethodName(), date);
 
         Calendar calendar = Calendar.getInstance();
-        calendar.setTime(birthday);
+        calendar.setTime(date);
 
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
 
-        birthday = calendar.getTime();
-        return birthday;
+        date = calendar.getTime();
+        return date;
     }
 
     @Override
     public void delete(Long id) {
+        logger.info("{}:{}; parameters: {}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                Thread.currentThread().getStackTrace()[1].getMethodName(), id);
+
         Connection connection = ConnectionFactory.openConnection();
         PreparedStatement preparedStatement = null;
         try {
@@ -117,7 +149,8 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
             preparedStatement.setLong(1, id);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            logger.error(Level.INFO, e);
+            logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                    Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
         } finally {
             try {
                 if (preparedStatement != null) {
@@ -127,18 +160,22 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
                     connection.close();
                 }
             } catch (SQLException e) {
-                logger.error(Level.INFO, e);
+                logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                        Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
             }
         }
     }
 
     @Override
     public People load(Long id) {
+        logger.info("{}:{}; parameters: {}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                Thread.currentThread().getStackTrace()[1].getMethodName(), id);
+
         Connection connection = ConnectionFactory.openConnection();
         PreparedStatement preparedStatement = null;
         try {
             preparedStatement = connection.prepareStatement("SELECT country, city, street, house, apartment, `index`, " +
-                    "people.id, first_name, last_name, sur_name, birth_date, sex, nationality, relationship_status, web_site, email, job, photo FROM people people " +
+                    "people.id, first_name, last_name, second_name, birth_date, sex, nationality, relationship_status, web_site, email, job, photo FROM people people " +
                     "LEFT JOIN address ON address.people_id = people.id WHERE people.id = ?");
             preparedStatement.setLong(1, id);
             ResultSet resultSet = preparedStatement.executeQuery();
@@ -154,9 +191,9 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
                 if (StringUtils.isNotBlank(lastName)) {
                     people.setLastName(lastName);
                 }
-                String surName = resultSet.getString("sur_name");
-                if (StringUtils.isNotBlank(surName)) {
-                    people.setSurName(surName);
+                String secondName = resultSet.getString("second_name");
+                if (StringUtils.isNotBlank(secondName)) {
+                    people.setSecondName(secondName);
                 }
                 Date birthDate = resultSet.getDate("birth_date");
                 if (birthDate != null) {
@@ -191,9 +228,6 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
                     people.setPhoto(photo);
                 }
 
-                List<Phone> phones = getPhonesByPeople(id);
-                people.setPhones(phones);
-
                 Address address = new Address();
                 String country = resultSet.getString("country");
                 if (StringUtils.isNotBlank(country)) {
@@ -221,11 +255,18 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
                 }
                 people.setAddress(address);
 
+                List<Phone> phones = getPhonesByPeople(id);
+                people.setPhones(phones);
+
+                List<Attachment> attachments = getAttachmentsByPeople(id);
+                people.setAttachments(attachments);
+
                 return people;
             }
             return null;
         } catch (SQLException e) {
-            logger.error(Level.INFO, e);
+            logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                    Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
         } finally {
             try {
                 if (preparedStatement != null) {
@@ -235,17 +276,21 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
                     connection.close();
                 }
             } catch (SQLException e) {
-                logger.error(Level.INFO, e);
+                logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                        Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
             }
         }
         return null;
     }
 
     private List<Phone> getPhonesByPeople(Long peopleId) {
+        logger.info("{}:{}; parameters: {}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                Thread.currentThread().getStackTrace()[1].getMethodName(), peopleId);
+
         Connection connection = ConnectionFactory.openConnection();
         PreparedStatement preparedStatement = null;
         try {
-            preparedStatement = connection.prepareStatement("SELECT *  FROM phone  WHERE people_id = ?");
+            preparedStatement = connection.prepareStatement("SELECT * FROM phone WHERE people_id = ?");
             preparedStatement.setLong(1, peopleId);
             ResultSet resultSet = preparedStatement.executeQuery();
 
@@ -278,7 +323,8 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
 
             return phones;
         } catch (SQLException e) {
-            logger.error(Level.INFO, e);
+            logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                    Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
         } finally {
             try {
                 if (preparedStatement != null) {
@@ -288,13 +334,75 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
                     connection.close();
                 }
             } catch (SQLException e) {
-                logger.error(Level.INFO, e);
+                logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                        Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
+            }
+        }
+        return null;
+    }
+
+    private List<Attachment> getAttachmentsByPeople(Long peopleId) {
+        logger.info("{}:{}; parameters: {}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                Thread.currentThread().getStackTrace()[1].getMethodName(), peopleId);
+
+        Connection connection = ConnectionFactory.openConnection();
+        PreparedStatement preparedStatement = null;
+        try {
+            preparedStatement = connection.prepareStatement("SELECT * FROM attachment WHERE people_id = ?");
+            preparedStatement.setLong(1, peopleId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            List<Attachment> attachments = new ArrayList<>();
+            while (resultSet.next()) {
+                Attachment attachment = new Attachment();
+                attachment.setId(resultSet.getInt("id"));
+                String generatedName = resultSet.getString("generated_name");
+                if (StringUtils.isNotBlank(generatedName)) {
+                    attachment.setGeneratedName(generatedName);
+                }
+                String originalName = resultSet.getString("original_name");
+                if (StringUtils.isNotBlank(originalName)) {
+                    attachment.setOriginalName(originalName);
+                }
+                String type = resultSet.getString("type");
+                if (StringUtils.isNotBlank(type)) {
+                    attachment.setType(type);
+                }
+                Date uploadDate = resultSet.getDate("upload_date");
+                if (uploadDate != null) {
+                    attachment.setUploadDate(uploadDate);
+                }
+                String comment = resultSet.getString("comment");
+                if (StringUtils.isNotBlank(comment)) {
+                    attachment.setComment(comment);
+                }
+                attachments.add(attachment);
+            }
+
+            return attachments;
+        } catch (SQLException e) {
+            logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                    Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
+        } finally {
+            try {
+                if (preparedStatement != null) {
+                    preparedStatement.close();
+                }
+                if (connection != null) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                        Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
             }
         }
         return null;
     }
 
     private List<Integer> getIdsPhonesByPeople(Long peopleId) {
+        logger.info("{}:{}; parameters: {}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                Thread.currentThread().getStackTrace()[1].getMethodName(), peopleId);
+
         Connection connection = ConnectionFactory.openConnection();
         PreparedStatement preparedStatement = null;
         try {
@@ -308,7 +416,8 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
             }
             return ids;
         } catch (SQLException e) {
-            logger.error(Level.INFO, e);
+            logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                    Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
         } finally {
             try {
                 if (preparedStatement != null) {
@@ -318,7 +427,43 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
                     connection.close();
                 }
             } catch (SQLException e) {
-                logger.error(Level.INFO, e);
+                logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                        Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
+            }
+        }
+        return null;
+    }
+
+    private List<Integer> getIdsAttachmentsByPeople(Long peopleId) {
+        logger.info("{}:{}; parameters: {}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                Thread.currentThread().getStackTrace()[1].getMethodName(), peopleId);
+
+        Connection connection = ConnectionFactory.openConnection();
+        PreparedStatement preparedStatement = null;
+        try {
+            preparedStatement = connection.prepareStatement("SELECT id FROM attachment WHERE people_id = ?");
+            preparedStatement.setLong(1, peopleId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            List<Integer> ids = new ArrayList<>();
+            while (resultSet.next()) {
+                ids.add(resultSet.getInt("id"));
+            }
+            return ids;
+        } catch (SQLException e) {
+            logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                    Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
+        } finally {
+            try {
+                if (preparedStatement != null) {
+                    preparedStatement.close();
+                }
+                if (connection != null) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                        Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
             }
         }
         return null;
@@ -326,34 +471,27 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
 
     @Override
     public People update(People people) {
+        logger.info("{}:{}; parameters: {}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                Thread.currentThread().getStackTrace()[1].getMethodName(), people.toString());
+
         Connection connection = ConnectionFactory.openConnection();
         PreparedStatement preparedStatement = null;
         try {
-            preparedStatement = connection.prepareStatement("UPDATE people " +
-                    "SET first_name = ?, last_name = ?, sur_name = ?, birth_date = ?, " +
-                    "sex = ?, nationality = ?, relationship_status = ?, web_site = ?, email = ?, job = ?, photo = ? " +
-                    "WHERE id = ?");
-            preparedStatement.setString(1, people.getFirstName());
-            preparedStatement.setString(2, people.getLastName());
-            preparedStatement.setString(3, people.getSurName());
-            if (people.getBirthday() != null) {
-                java.util.Date birthday = getDateWithoutTime(people);
-                preparedStatement.setTimestamp(4, new Timestamp(birthday.getTime()));
+            String sql = "UPDATE people SET first_name = ?, last_name = ?, second_name = ?, birth_date = ?, " +
+                    "sex = ?, nationality = ?, relationship_status = ?, web_site = ?, email = ?, job = ?";
+            if (people.getPhoto() != null) {
+                sql = StringUtils.appendIfMissing(sql, ", photo = ? WHERE id = ?");
             } else {
-                preparedStatement.setTimestamp(4, null);
+                sql = StringUtils.appendIfMissing(sql, " WHERE id = ?");
             }
-            preparedStatement.setString(5, Sex.convertToString(people.getSex()));
-            preparedStatement.setString(6, people.getNationality());
-            preparedStatement.setString(7, RelationshipStatus.convertToString(people.getRelationshipStatus()));
-            preparedStatement.setString(8, people.getWebSite());
-            preparedStatement.setString(9, people.getEmail());
-            preparedStatement.setString(10, people.getJob());
+            preparedStatement = connection.prepareStatement(sql);
+            preparedStatementSetPeopleAttributes(people, preparedStatement);
             if (people.getPhoto() != null) {
                 preparedStatement.setBlob(11, people.getPhoto());
+                preparedStatement.setInt(12, people.getId());
             } else {
-                preparedStatement.setNull(11, java.sql.Types.BLOB);
+                preparedStatement.setInt(11, people.getId());
             }
-            preparedStatement.setInt(12, people.getId());
             preparedStatement.executeUpdate();
 
             preparedStatement = connection.prepareStatement("UPDATE address " +
@@ -373,31 +511,33 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
             List<Integer> idsExistPhones = getIdsPhonesByPeople(Long.valueOf(people.getId()));
 
             List<Phone> phones = people.getPhones();
-            for (int i = 0; i < phones.size(); ++i) {
-                if (phones.get(i).getId().contains("new")) {
+            for (Phone phone : phones) {
+                if (phone.getId().contains("new")) {
                     preparedStatement = connection.prepareStatement("INSERT INTO phone(people_id, country_code, operator_code, phone_number, phone_type, comment) " +
                             "VALUE (?, ?, ?, ?, ?, ?)");
                     preparedStatement.setInt(1, people.getId());
-                    preparedStatement.setString(2, phones.get(i).getCountryCode());
-                    preparedStatement.setString(3, phones.get(i).getOperatorCode());
-                    preparedStatement.setString(4, phones.get(i).getPhoneNumber());
-                    preparedStatement.setString(5, PhoneType.convertToString(phones.get(i).getPhoneType()));
-                    preparedStatement.setString(6, phones.get(i).getComment());
+                    preparedStatement.setString(2, phone.getCountryCode());
+                    preparedStatement.setString(3, phone.getOperatorCode());
+                    preparedStatement.setString(4, phone.getPhoneNumber());
+                    preparedStatement.setString(5, PhoneType.convertToString(phone.getPhoneType()));
+                    preparedStatement.setString(6, phone.getComment());
                     preparedStatement.executeUpdate();
                 } else {
                     preparedStatement = connection.prepareStatement("UPDATE phone " +
                             "SET country_code = ?, operator_code = ?, phone_number = ?, phone_type = ?, comment = ? " +
                             "WHERE id = ?");
-                    preparedStatement.setString(1, phones.get(i).getCountryCode());
-                    preparedStatement.setString(2, phones.get(i).getOperatorCode());
-                    preparedStatement.setString(3, phones.get(i).getPhoneNumber());
-                    preparedStatement.setString(4, PhoneType.convertToString(phones.get(i).getPhoneType()));
-                    preparedStatement.setString(5, phones.get(i).getComment());
-                    preparedStatement.setInt(6, Integer.parseInt(phones.get(i).getId()));
+                    preparedStatement.setString(1, phone.getCountryCode());
+                    preparedStatement.setString(2, phone.getOperatorCode());
+                    preparedStatement.setString(3, phone.getPhoneNumber());
+                    preparedStatement.setString(4, PhoneType.convertToString(phone.getPhoneType()));
+                    preparedStatement.setString(5, phone.getComment());
+                    preparedStatement.setInt(6, Integer.parseInt(phone.getId()));
                     preparedStatement.executeUpdate();
 
-                    int index = idsExistPhones.indexOf(Integer.parseInt(phones.get(i).getId()));
-                    idsExistPhones.remove(index);
+                    int index = idsExistPhones.indexOf(Integer.parseInt(phone.getId()));
+                    if (index != -1) {
+                        idsExistPhones.remove(index);
+                    }
                 }
             }
 
@@ -407,8 +547,48 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
                 preparedStatement.executeUpdate();
             }
 
+            List<Integer> idsExistAttachments = getIdsAttachmentsByPeople(Long.valueOf(people.getId()));
+
+            List<Attachment> attachments = people.getAttachments();
+            for (Attachment attachment : attachments) {
+                if (attachment.getId() == -1) {
+                    preparedStatement = connection.prepareStatement("INSERT INTO attachment(people_id, generated_name, original_name, type, upload_date, comment) " +
+                            "VALUE (?, ?, ?, ?, ?, ?)");
+                    preparedStatement.setInt(1, people.getId());
+                    preparedStatement.setString(2, attachment.getGeneratedName());
+                    preparedStatement.setString(3, attachment.getOriginalName());
+                    preparedStatement.setString(4, attachment.getType());
+                    if (attachment.getUploadDate() != null) {
+                        java.util.Date uploadDate = getDateWithoutTime(attachment.getUploadDate());
+                        preparedStatement.setTimestamp(5, new Timestamp(uploadDate.getTime()));
+                    } else {
+                        preparedStatement.setTimestamp(5, null);
+                    }
+                    preparedStatement.setString(6, attachment.getComment());
+                    preparedStatement.executeUpdate();
+                } else {
+                    preparedStatement = connection.prepareStatement("UPDATE attachment " +
+                            "SET original_name = ?, comment = ? WHERE id = ?");
+                    preparedStatement.setString(1, attachment.getOriginalName());
+                    preparedStatement.setString(2, attachment.getComment());
+                    preparedStatement.setInt(3, attachment.getId());
+                    preparedStatement.executeUpdate();
+
+                    int index = idsExistAttachments.indexOf(attachment.getId());
+                    if (index != -1) {
+                        idsExistAttachments.remove(index);
+                    }
+                }
+            }
+
+            for (Integer idAttachment : idsExistAttachments) {
+                preparedStatement = connection.prepareStatement("DELETE FROM attachment WHERE id = ?");
+                preparedStatement.setLong(1, idAttachment);
+                preparedStatement.executeUpdate();
+            }
         } catch (SQLException e) {
-            logger.error(Level.INFO, e);
+            logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                    Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
         } finally {
             try {
                 if (preparedStatement != null) {
@@ -418,19 +598,23 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
                     connection.close();
                 }
             } catch (SQLException e) {
-                logger.error(Level.INFO, e);
+                logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                        Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
             }
         }
         return null;
     }
 
     @Override
-    public List<People> getAll(int limit, int offset) {
+    public List<People> find(int limit, int offset) {
+        logger.info("{}:{}; parameters: {}, {}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                Thread.currentThread().getStackTrace()[1].getMethodName(), limit, offset);
+
         Connection connection = ConnectionFactory.openConnection();
         PreparedStatement preparedStatement = null;
         try {
             preparedStatement = connection.prepareStatement("SELECT country, city, street, house, apartment, `index`," +
-                    "people.id, first_name, last_name, sur_name, birth_date, job FROM people people LEFT JOIN address ON address.people_id = people.id " +
+                    "people.id, first_name, last_name, second_name, birth_date, job FROM people people LEFT JOIN address ON address.people_id = people.id " +
                     "LIMIT ?, ?");
             preparedStatement.setInt(1, limit * offset);
             preparedStatement.setInt(2, limit);
@@ -448,9 +632,9 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
                 if (StringUtils.isNotBlank(lastName)) {
                     people.setLastName(lastName);
                 }
-                String surName = resultSet.getString("sur_name");
-                if (StringUtils.isNotBlank(surName)) {
-                    people.setSurName(surName);
+                String secondName = resultSet.getString("second_name");
+                if (StringUtils.isNotBlank(secondName)) {
+                    people.setSecondName(secondName);
                 }
                 Date birthDate = resultSet.getDate("birth_date");
                 if (birthDate != null) {
@@ -492,7 +676,8 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
             }
             return peoples;
         } catch (SQLException e) {
-            logger.error(Level.INFO, e);
+            logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                    Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
         } finally {
             try {
                 if (preparedStatement != null) {
@@ -502,7 +687,8 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
                     connection.close();
                 }
             } catch (SQLException e) {
-                logger.error(Level.INFO, e);
+                logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                        Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
             }
         }
         return null;
@@ -510,6 +696,9 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
 
     @Override
     public Integer getCountElements() {
+        logger.info("{}:{};", Thread.currentThread().getStackTrace()[1].getClassName(),
+                Thread.currentThread().getStackTrace()[1].getMethodName());
+
         Connection connection = ConnectionFactory.openConnection();
         PreparedStatement preparedStatement = null;
         try {
@@ -521,7 +710,8 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
             }
             return 0;
         } catch (SQLException e) {
-            logger.error(Level.INFO, e);
+            logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                    Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
         } finally {
             try {
                 if (preparedStatement != null) {
@@ -531,7 +721,8 @@ public class PeopleDaoImpl extends AbstractDao<People> implements PeopleDao {
                     connection.close();
                 }
             } catch (SQLException e) {
-                logger.error(Level.INFO, e);
+                logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                        Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
             }
         }
         return null;

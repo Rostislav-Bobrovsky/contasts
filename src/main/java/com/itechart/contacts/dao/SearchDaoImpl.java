@@ -3,11 +3,9 @@ package com.itechart.contacts.dao;
 import com.itechart.contacts.dao.generic.ConnectionFactory;
 import com.itechart.contacts.model.*;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.beans.Introspector;
 import java.sql.*;
 import java.sql.Date;
 import java.util.*;
@@ -20,11 +18,14 @@ public class SearchDaoImpl implements SearchDao {
 
     @Override
     public List<People> getBySearch(SearchDto searchDto) {
+        logger.info("{}:{}; parameters: {}",  Thread.currentThread().getStackTrace()[1].getClassName(),
+                Thread.currentThread().getStackTrace()[1].getMethodName(), searchDto.toString());
+
         Connection connection = ConnectionFactory.openConnection();
         PreparedStatement preparedStatement = null;
         try {
             String sql = "SELECT country, city, street, house, apartment, `index`, " +
-                    "people.id, first_name, last_name, sur_name, birth_date, job FROM people people " +
+                    "people.id, first_name, last_name, second_name, birth_date, job FROM people people " +
                     "LEFT JOIN address ON address.people_id = people.id WHERE ";
             if (searchDto.getFirstName() != null) {
                 sql = StringUtils.appendIfMissing(sql, "people.first_name LIKE ? AND ");
@@ -32,8 +33,8 @@ public class SearchDaoImpl implements SearchDao {
             if (searchDto.getLastName() != null) {
                 sql = StringUtils.appendIfMissing(sql, "people.last_name LIKE ? AND ");
             }
-            if (searchDto.getSurName() != null) {
-                sql = StringUtils.appendIfMissing(sql, "people.sur_name LIKE ? AND ");
+            if (searchDto.getSecondName() != null) {
+                sql = StringUtils.appendIfMissing(sql, "people.second_name LIKE ? AND ");
             }
             if (searchDto.getDateFrom() != null) {
                 sql = StringUtils.appendIfMissing(sql, "people.birth_date >= ? AND ");
@@ -89,8 +90,8 @@ public class SearchDaoImpl implements SearchDao {
             if (searchDto.getLastName() != null) {
                 preparedStatement.setString(i++, "%" + searchDto.getLastName() + "%");
             }
-            if (searchDto.getSurName() != null) {
-                preparedStatement.setString(i++, "%" + searchDto.getSurName() + "%");
+            if (searchDto.getSecondName() != null) {
+                preparedStatement.setString(i++, "%" + searchDto.getSecondName() + "%");
             }
             if (searchDto.getDateFrom() != null) {
                 preparedStatement.setTimestamp(i++, new Timestamp(searchDto.getDateFrom().getTime()));
@@ -149,9 +150,9 @@ public class SearchDaoImpl implements SearchDao {
                     if (StringUtils.isNotBlank(lastName)) {
                         people.setLastName(lastName);
                     }
-                    String surName = resultSet.getString("sur_name");
-                    if (StringUtils.isNotBlank(surName)) {
-                        people.setSurName(surName);
+                    String secondName = resultSet.getString("second_name");
+                    if (StringUtils.isNotBlank(secondName)) {
+                        people.setSecondName(secondName);
                     }
                     Date birthDate = resultSet.getDate("birth_date");
                     if (birthDate != null) {
@@ -194,7 +195,8 @@ public class SearchDaoImpl implements SearchDao {
             }
             return peoples;
         } catch (SQLException e) {
-            logger.error(Level.INFO, e);
+            logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                    Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
         } finally {
             try {
                 if (preparedStatement != null) {
@@ -204,7 +206,8 @@ public class SearchDaoImpl implements SearchDao {
                     connection.close();
                 }
             } catch (SQLException e) {
-                logger.error(Level.INFO, e);
+                logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                        Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
             }
         }
         return null;
@@ -212,6 +215,9 @@ public class SearchDaoImpl implements SearchDao {
 
     @Override
     public List<String> getSelectEmails(String[] ids) {
+        logger.info("{}:{}; parameters: {}",  Thread.currentThread().getStackTrace()[1].getClassName(),
+                Thread.currentThread().getStackTrace()[1].getMethodName(), Arrays.toString(ids));
+
         Connection connection = ConnectionFactory.openConnection();
         PreparedStatement preparedStatement = null;
         try {
@@ -233,7 +239,8 @@ public class SearchDaoImpl implements SearchDao {
             }
             return emails;
         } catch (SQLException e) {
-            logger.error(Level.INFO, e);
+            logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                    Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
         } finally {
             try {
                 if (preparedStatement != null) {
@@ -243,7 +250,8 @@ public class SearchDaoImpl implements SearchDao {
                     connection.close();
                 }
             } catch (SQLException e) {
-                logger.error(Level.INFO, e);
+                logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                        Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
             }
         }
         return null;
@@ -251,7 +259,9 @@ public class SearchDaoImpl implements SearchDao {
 
     @Override
     public List<People> getByEmail(String[] emails) {
-        logger.info("Class {}. Method {}. Parameters: {}. {}", SearchDaoImpl.class.getSimpleName(), SearchDaoImpl.class.getMethods(), emails.toString(), Level.INFO);
+        logger.info("{}:{}; parameters: {}",  Thread.currentThread().getStackTrace()[1].getClassName(),
+                Thread.currentThread().getStackTrace()[1].getMethodName(), Arrays.toString(emails));
+
         Connection connection = ConnectionFactory.openConnection();
         PreparedStatement preparedStatement = null;
         try {
@@ -276,7 +286,8 @@ public class SearchDaoImpl implements SearchDao {
             }
             return peoples;
         } catch (SQLException e) {
-            logger.error(e.getMessage(), e);
+            logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                    Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
         } finally {
             try {
                 if (preparedStatement != null) {
@@ -286,7 +297,8 @@ public class SearchDaoImpl implements SearchDao {
                     connection.close();
                 }
             } catch (SQLException e) {
-                logger.error(Level.INFO, e);
+                logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                        Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
             }
         }
         return null;
@@ -294,12 +306,13 @@ public class SearchDaoImpl implements SearchDao {
 
     @Override
     public List<People> getByBirthday(java.util.Date date) {
-//        logger.info("Class {}. Method {}. Parameters: {}. {}", SearchDaoImpl.class.getSimpleName(), SearchDaoImpl.class.getMethods(), emails.toString(), Level.INFO);
+        logger.info("{}:{}; parameters: {}",  Thread.currentThread().getStackTrace()[1].getClassName(),
+                Thread.currentThread().getStackTrace()[1].getMethodName(), date.toString());
+
         Connection connection = ConnectionFactory.openConnection();
         PreparedStatement preparedStatement = null;
         try {
-            preparedStatement = connection.prepareStatement("SELECT first_name, email FROM people WHERE people.birth_date = ?");
-            preparedStatement.setTimestamp(1, new Timestamp(date.getTime()));
+            preparedStatement = connection.prepareStatement("SELECT first_name, email, birth_date FROM people WHERE people.birth_date != \"NULL\"");
             ResultSet resultSet = preparedStatement.executeQuery();
 
             List<People> peoples = new ArrayList<>();
@@ -307,11 +320,33 @@ public class SearchDaoImpl implements SearchDao {
                 People people = new People();
                 people.setFirstName(resultSet.getString("first_name"));
                 people.setEmail(resultSet.getString("email"));
+                people.setBirthday(resultSet.getDate("birth_date"));
                 peoples.add(people);
             }
-            return peoples;
+
+            List<People> resultList = new ArrayList<>();
+            for (People people : peoples) {
+                Calendar calendarBrithday = Calendar.getInstance();
+                calendarBrithday.setTime(people.getBirthday());
+                Calendar calendarDate = Calendar.getInstance();
+                calendarDate.setTime(date);
+
+                int dateBr = calendarBrithday.get(Calendar.DATE);
+                int dateDt = calendarDate.get(Calendar.DATE);
+
+                if (dateBr == dateDt) {
+                    int monthBr = calendarBrithday.get(Calendar.MONTH);
+                    int monthDt = calendarDate.get(Calendar.MONTH);
+
+                    if (monthBr == monthDt) {
+                        resultList.add(people);
+                    }
+                }
+            }
+            return resultList;
         } catch (SQLException e) {
-            logger.error(e.getMessage(), e);
+            logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                    Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
         } finally {
             try {
                 if (preparedStatement != null) {
@@ -321,7 +356,8 @@ public class SearchDaoImpl implements SearchDao {
                     connection.close();
                 }
             } catch (SQLException e) {
-                logger.error(Level.INFO, e);
+                logger.error("{}:{}; exception {}; {} \n{}", Thread.currentThread().getStackTrace()[1].getClassName(),
+                        Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage(), Arrays.toString(e.getStackTrace()));
             }
         }
         return null;

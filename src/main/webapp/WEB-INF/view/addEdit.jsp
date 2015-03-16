@@ -11,15 +11,16 @@
     <link href="${pageContext.request.contextPath}/resources/css/bootstrap.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/resources/css/styles.css" rel="stylesheet">
     <script src="${pageContext.request.contextPath}/resources/js/script.js"></script>
+    <script src="${pageContext.request.contextPath}/resources/js/formPhone.js"></script>
+    <script src="${pageContext.request.contextPath}/resources/js/formAttachment.js"></script>
 </head>
 <body>
 <div class="container">
     <header class="page-header">
         <h1 class="text-center">${buttonForm}</h1>
     </header>
-
-    <form action="${pageContext.request.contextPath}/contacts/1" method="post"
-          onsubmit="return checkEmptyFormAddEdit('${buttonForm}');" enctype="multipart/form-data">
+    <form action="list?action=${buttonForm}&limit=${limit}&offset=${offset}" method="post" onsubmit="return checkEmptyFormAddEdit('${buttonForm}');"
+          enctype="multipart/form-data">
         <div class="row">
             <div class="col-lg-4">
                 <div class="row">
@@ -28,7 +29,6 @@
                     <div class="col-lg-12">
                         <div class="col-lg-4">
                             <input type="file" style="visibility: hidden" id="inputPhoto" name="inputPhoto">
-                            <input type="hidden" id="isUploadImage" name="isUploadImage" value="false">
 
                             <c:if test="${empty uploadImage}">
                                 <img src="${pageContext.request.contextPath}/resources/img/UserProfile.png"
@@ -42,20 +42,26 @@
                             </c:if>
                         </div>
                         <div class="col-lg-8">
-                            <input type="text" class="form-control" id="firstName" name="firstName"
-                                   placeholder="First Name"
-                                   value="${people.firstName}">
+                            <div id="lineFirstName">
+                                <input type="text" class="form-control" id="firstName" name="firstName"
+                                       placeholder="First Name"
+                                       value="${people.firstName}">
+                            </div>
                             <br>
-                            <input type="text" class="form-control" id="lastName" name="lastName"
-                                   placeholder="Last Name"
-                                   value="${people.lastName}">
+
+                            <div id="lineLastName">
+                                <input type="text" class="form-control" id="lastName" name="lastName"
+                                       placeholder="Last Name"
+                                       value="${people.lastName}">
+                            </div>
                             <br>
-                            <input type="text" class="form-control" id="surName" name="surName" placeholder="Surname"
-                                   value="${people.surName}">
+                            <input type="text" class="form-control" id="secondName" name="secondName"
+                                   placeholder="Second Name"
+                                   value="${people.secondName}">
                             <br>
                         </div>
                         <div class="form-horizontal">
-                            <div class="form-group">
+                            <div id="lineBirthday" class="form-group">
                                 <label for="inputDate" class="col-lg-4 control-label">Birthday</label>
 
                                 <div class="col-lg-8">
@@ -126,7 +132,7 @@
                             </div>
                         </div>
                         <div class="form-horizontal">
-                            <div class="form-group">
+                            <div id="lineEmail" class="form-group">
                                 <label for="inputEmail" class="col-lg-4 control-label">Email</label>
 
                                 <div class="col-lg-8">
@@ -149,12 +155,14 @@
                         </div>
                         <div class="form-horizontal">
                             <div class="form-group">
-                                <label for="inputCountry" class="col-lg-4 control-label">Region</label>
+                                <div id="lineCountry">
+                                    <label for="inputCountry" class="col-lg-4 control-label">Region</label>
 
-                                <div class="col-lg-4">
-                                    <input type="text" class="form-control" id="inputCountry" name="inputCountry"
-                                           placeholder="Country"
-                                           value="${people.address.country}">
+                                    <div class="col-lg-4">
+                                        <input type="text" class="form-control" id="inputCountry" name="inputCountry"
+                                               placeholder="Country"
+                                               value="${people.address.country}">
+                                    </div>
                                 </div>
                                 <div class="col-lg-4">
                                     <input type="text" class="form-control" id="inputCity" name="inputCity"
@@ -206,8 +214,12 @@
             </div>
             <div class="col-lg-8">
                 <div class="row pull-right">
-                    <button type="button" onclick="showFormPhoneAdd();" class="btn btn-success">Add</button>
-                    <button type="button" onclick="removePhones('');" class="btn btn-danger">Remove</button>
+                    <a type="button" onclick="showFormPhoneAdd();" class="btn btn-success" href="javascript:void(0)">
+                        <span class="glyphicon glyphicon-plus"></span>&nbsp;Add
+                    </a>
+                    <a type="button" onclick="removePhones();" class="btn btn-danger" href="javascript:void(0)">
+                        <span class="glyphicon glyphicon-trash"></span>&nbsp;Remove
+                    </a>
                 </div>
                 <br><br>
 
@@ -236,9 +248,9 @@
                                    value="${phone.comment}">
 
                             <tr id="line-${phone.id}">
-                                <td id="viewCountryCode-${phone.id}"><input class="selectPhone"
-                                                                            onclick="onPhoneCheckboxClicked();"
-                                                                            type="checkbox" value="${phone.id}"></td>
+                                <td id="viewCountryCode-${phone.id}"><input type="checkbox" value="${phone.id}"
+                                                                            class="selectPhone"
+                                                                            onclick="onPhoneCheckboxClicked();"></td>
                                 <td><a id="viewFullPhoneNumber-${phone.id}" onclick="showFormPhoneEdit('${phone.id}');"
                                        href="javascript:void(0)">${phone.countryCode}
                                     (${phone.operatorCode}) ${phone.phoneNumber}</a>
@@ -253,8 +265,13 @@
                 <br><br>
 
                 <div class="row pull-right">
-                    <a class="btn btn-success" onclick="showFormAttachmentAdd();" href="#">Add</a>
-                    <a class="btn btn-danger" href="#">Remove</a>
+                    <a class="btn btn-success" id="addAttachment" onclick="showFormAttachmentAdd();"
+                       href="javascript:void(0)">
+                        <span class="glyphicon glyphicon-plus"></span>&nbsp;Add
+                    </a>
+                    <a class="btn btn-danger" href="javascript:void(0)" onclick="removeAttachments();">
+                        <span class="glyphicon glyphicon-trash"></span>&nbsp;Remove
+                    </a>
                 </div>
                 <br><br>
 
@@ -262,23 +279,77 @@
                     <table class="table table-striped table-bordered">
                         <thead>
                         <tr>
-                            <th><input type="checkbox"></th>
+                            <th><input id="selectAllAttachments" onclick="onSelectAllAttachmentsClicked();"
+                                       type="checkbox"></th>
                             <th>Filename</th>
                             <th>Uploads</th>
                             <th>Comment</th>
                         </tr>
                         </thead>
-                        <tbody>
-                        <c:forEach var="attachment" items="">
-                            <tr>
-                                <td><input type="checkbox"></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
+                        <tbody id="tableAttachments">
+                        <c:if test="${empty people.attachments || people.attachments.size() == 0}">
+                            <input type="hidden" id="numberLastAttachment" value="0">
+                            <input type="hidden" id="maxUpload" value="30">
+
+                            <div class="hidden">
+                                <c:forEach var="i" begin="1" end="30">
+                                    <input type="file" id="inputAttachmentFile-${i}" name="inputAttachmentFile-${i}">
+                                </c:forEach>
+                            </div>
+                        </c:if>
+                        <c:forEach var="attachment" items="${people.attachments}" varStatus="loopStatus">
+                            <input type="hidden" id="inputAttachmentId-${loopStatus.count}"
+                                   name="inputAttachmentId-${loopStatus.count}"
+                                   value="${attachment.id}">
+                            <input type="hidden" id="inputAttachmentName-${loopStatus.count}"
+                                   name="inputAttachmentName-${loopStatus.count}"
+                                   value="${attachment.originalName}">
+                            <input type="hidden" id="inputAttachmentNameGenerated-${loopStatus.count}"
+                                   value="${attachment.generatedName}">
+                            <input type="hidden" id="inputAttachmentType-${loopStatus.count}"
+                                   name="inputAttachmentType-${loopStatus.count}">
+                            <input type="hidden" id="inputAttachmentDate-${loopStatus.count}"
+                                   name="inputAttachmentDate-${loopStatus.count}"
+                                   value="${attachment.uploadDate}">
+                            <input type="hidden" id="inputAttachmentComment-${loopStatus.count}"
+                                   name="inputAttachmentComment-${loopStatus.count}"
+                                   value="${attachment.comment}">
+
+                            <tr id="lineAttachment-${loopStatus.count}">
+                                <td id="viewAttachment-${loopStatus.count}"><input type="checkbox"
+                                                                                   value="${loopStatus.count}"
+                                                                                   class="selectAttachment"
+                                                                                   onclick="onAttachmentCheckboxClicked();">
+                                </td>
+                                <td><a id="viewAttachmentName-${loopStatus.count}"
+                                       onclick="showFormAttachmentEdit(${loopStatus.count});"
+                                       href="javascript:void(0)">${attachment.originalName}</a></td>
+                                <td id="viewAttachmentDate-${loopStatus.count}">
+                                    <a href="${pageContext.request.contextPath}/resources/attachments/${attachment.generatedName}"
+                                       download="${attachment.originalName}${attachment.type}">${attachment.uploadDate}</a>
+                                </td>
+                                <td id="viewAttachmentComment-${loopStatus.count}">${attachment.comment}</td>
                             </tr>
+
+                            <c:if test="${loopStatus.last}">
+                                <input type="hidden" id="numberLastAttachment" value="${loopStatus.count}">
+                                <input type="hidden" id="maxUpload" value="${loopStatus.count + 30}">
+
+                                <div class="hidden">
+                                    <c:forEach var="i" begin="${loopStatus.count + 1}"
+                                               end="${loopStatus.count + 1 + 30}">
+                                        <input type="file" id="inputAttachmentFile-${i}"
+                                               name="inputAttachmentFile-${i}">
+                                    </c:forEach>
+                                </div>
+                            </c:if>
                         </c:forEach>
                         </tbody>
                     </table>
+                    <div class="pull-right">
+                        <p class="text-info">Click on a date upload to download this file</p>
+                        <input type="hidden" id="removesFiles" name="removesFiles">
+                    </div>
                 </div>
             </div>
 
@@ -287,10 +358,11 @@
         <div class="row">
             <div class="col-lg-6">
                 <a class="btn btn-default btn-lg pull-right"
-                   href="${pageContext.request.contextPath}/contacts/1">Cancel</a>
+                   href="list?limit=${limit}&offset=${offset}">Cancel</a>
             </div>
             <div class="col-lg-6">
-                <button type="submit" class="btn btn-success btn-lg">${buttonForm} contact
+                <button type="submit" class="btn btn-success btn-lg"><span class="glyphicon glyphicon-edit"></span>&nbsp;${buttonForm}
+                    contact
                 </button>
             </div>
         </div>
@@ -298,18 +370,27 @@
 
     <div id="popup-phone">
         <div class="popup-form">
-            <form action="#" class="form-settings" name="form">
+            <form action="#" class="form-settings" name="formPhone">
                 <img class="close" src="${pageContext.request.contextPath}/resources/img/close.png"
                      onclick="hideFormPhone()">
 
                 <h2 class="text-center">Phone</h2>
                 <hr class="hr-line">
                 <input id="idFormPhone" type="hidden">
-                <input class="form-control" id="countryCode" placeholder="Country code" type="text">
+
+                <div id="lineCountryCode">
+                    <input class="form-control" id="countryCode" placeholder="Country code" type="text">
+                </div>
                 <br>
-                <input class="form-control" id="operatorCode" placeholder="Operator code" type="text">
+
+                <div id="lineOperatorCode">
+                    <input class="form-control" id="operatorCode" placeholder="Operator code" type="text">
+                </div>
                 <br>
-                <input class="form-control" id="phoneNumber" placeholder="Phone number" type="text">
+
+                <div id="linePhoneNumber">
+                    <input class="form-control" id="phoneNumber" placeholder="Phone number" type="text">
+                </div>
                 <br>
                 <select id="phoneType" class="form-control">
                     <c:forEach var="phoneType" items="<%=PhoneType.values()%>">
@@ -320,29 +401,39 @@
                 <textarea class="form-control textarea-vertical" id="commentPhone"
                           placeholder="Comment"></textarea>
                 <br>
-                <a class="btn btn-success center-block" onclick="savePhoneFormPhone('${idLastPhone}');"
-                   href="#">Save</a>
+                <button type="button" class="btn btn-success center-block"
+                        onclick="savePhoneFormPhone('${idLastPhone}');">
+                    <span class="glyphicon glyphicon-ok"></span>&nbsp;Save Phone
+                </button>
             </form>
         </div>
     </div>
     <div id="popup-attachment">
         <div class="popup-form">
-            <form action="#" class="form-settings" name="form">
+            <form action="#" class="form-settings" name="formAttachment">
                 <img class="close" src="${pageContext.request.contextPath}/resources/img/close.png"
                      onclick="hideFormAttachment()">
 
                 <h2 class="text-center">Attachment</h2>
                 <hr class="hr-line">
-                <input id="Filename" placeholder="Filename" type="file">
+                <input id="lineEditAttachment" type="hidden">
+                <button type="button" id="buttonUpload" class="btn btn-success center-block" disabled
+                        onclick="chooseFile();"><span
+                        class="glyphicon glyphicon-download"></span>&nbsp;Choose File
+                </button>
+                <p class="text-danger text-center">Maximum upload size 16Mb</p>
+                <br>
+                <input type="text" class="form-control" id="nameAttachment" placeholder="New filename">
                 <br>
                 <textarea class="form-control textarea-vertical" id="commentAttachment"
                           placeholder="Comment"></textarea>
                 <br>
-                <a class="btn btn-success center-block" href="#">Save</a>
+                <button type="button" class="btn btn-success center-block" onclick="saveAttachmentFormPhone();">
+                    <span class="glyphicon glyphicon-ok"></span>&nbsp;Save Attachment
+                </button>
             </form>
         </div>
     </div>
-
 </div>
 
 </body>

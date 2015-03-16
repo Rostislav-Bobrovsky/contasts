@@ -3,6 +3,6 @@
 <html>
 <body>
 <h2>Hello World!</h2>
-<c:redirect url="contacts/1"/>
+<c:redirect url="contacts/list?limit=10&offset=0"/>
 </body>
 </html>
