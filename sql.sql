@@ -15,7 +15,7 @@ CREATE TABLE `people` (
   `nationality`         VARCHAR(20),
   `relationship_status` ENUM('nosel', 'sngl', 'rel', 'eng', 'mar', 'lov', 'cmpl', 'srch'),
   `web_site`            VARCHAR(50),
-  `email`               VARCHAR(50)      NOT NULL,
+  `email`               VARCHAR(50)      NOT NULL UNIQUE ,
   `job`                 VARCHAR(50),
   `photo`               MEDIUMBLOB,
   PRIMARY KEY (`id`)
